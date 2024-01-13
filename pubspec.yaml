@@ -1,0 +1,44 @@
+name: financas
+description: A new Flutter project.
+publish_to: 'none' # Remova esta linha se desejar publicar no pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.1.5 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  firebase_core: ^2.23.0
+  firebase_auth: ^4.15.0
+  cloud_firestore: ^4.13.3
+  intl: ^0.18.1
+  mask_text_input_formatter: ^2.7.0
+  flutter_datetime_picker: ^1.5.1
+flutter_localizations:
+  sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/logo.png
+    - assets/cadastro.png
+    - assets/essenciais.png
+    - assets/livres.png
+    - assets/educacao.png
+    - assets/projetos.png
+    - assets/receitas.png
+    - assets/despesas.png
+    - assets/transferencia.png
+    - assets/sair.png
+    - assets/metas.png
+    - assets/categorias.png
