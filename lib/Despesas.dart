@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:financas/model/AuthManager.dart';
+import 'package:financas/model/FirebaseService.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:get_it/get_it.dart';
 
 class Despesas extends StatefulWidget {
   const Despesas({super.key});
@@ -72,8 +74,6 @@ class _DespesasState extends State<Despesas> {
 
     return '${value.substring(0, value.length - 2)}.${value.substring(value.length - 2)}';
   }
-
-  salvarNovaDespesa() {}
 
   buscarUltimasDespesasSalvas() {}
 
@@ -227,15 +227,21 @@ class _DespesasState extends State<Despesas> {
 
 //**************************************** */ Campo de Autocomplete
               Autocomplete<String>(
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text == '') {
+                optionsBuilder: (TextEditingValue textEditingValue) async {
+                  if (textEditingValue.text == '' ||
+                      categoriaSelecionada == null) {
                     return const Iterable<String>.empty();
                   }
-                  // Aqui você buscaria as subcategorias do Firebase que correspondem ao que foi digitado
-                  // Para o exemplo, estamos usando uma lista estática de sugestões
-                  var subcategorias;
+
+                  // Busca as subcategorias do Firebase
+                  List<String> subcategorias =
+                      await FirebaseService('categoriasOrganizadas')
+                          .buscarSubcategorias(categoriaSelecionada!);
+
                   return subcategorias.where((String option) {
-                    return option.contains(textEditingValue.text.toLowerCase());
+                    return option
+                        .toLowerCase()
+                        .contains(textEditingValue.text.toLowerCase());
                   });
                 },
                 onSelected: (String selection) {
@@ -254,15 +260,12 @@ class _DespesasState extends State<Despesas> {
                     decoration: InputDecoration(
                       hintText: 'Buscar subcategoria',
                       prefixIcon: Icon(Icons.search),
-
-                      // A borda que aparece ao redor do campo de texto quando está focado
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(25),
                         borderSide: BorderSide(
                           color: Colors.red, // Cor vermelha para a borda focada
                         ),
                       ),
-                      // A borda que aparece ao redor do campo de texto quando está habilitado mas não focado
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(25),
                         borderSide: BorderSide(
