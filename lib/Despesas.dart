@@ -208,8 +208,8 @@ class _DespesasState extends State<Despesas> {
                     categoriaFrontEnd = newValue;
                     categoriaSelecionada = categoriasMapa[newValue];
 
-                    print('Categoria Firebase $categoriaSelecionada');
-                    print('Categoria Front End $categoriaFrontEnd');
+                    // print('Categoria Firebase $categoriaSelecionada');
+                    //print('Categoria Front End $categoriaFrontEnd');
                   });
                 },
                 underline: Container(
@@ -225,7 +225,7 @@ class _DespesasState extends State<Despesas> {
 
               SizedBox(height: 25),
 
-//**************************************** */ Campo de Autocomplete
+//**************************************** */ Campo de Autocomplete ************
               Autocomplete<String>(
                 optionsBuilder: (TextEditingValue textEditingValue) async {
                   if (textEditingValue.text == '' ||
@@ -233,9 +233,8 @@ class _DespesasState extends State<Despesas> {
                     return const Iterable<String>.empty();
                   }
 
-                  // Busca as subcategorias do Firebase
                   List<String> subcategorias =
-                      await FirebaseService('categoriasOrganizadas')
+                      await FirebaseService('categorias')
                           .buscarSubcategorias(categoriaSelecionada!);
 
                   return subcategorias.where((String option) {
@@ -277,7 +276,6 @@ class _DespesasState extends State<Despesas> {
                   );
                 },
               ),
-
               SizedBox(height: 25),
 
               Padding(

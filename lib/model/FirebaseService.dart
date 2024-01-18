@@ -32,17 +32,38 @@ class FirebaseService implements FirebaseServiceBase {
     await _collectionReference.doc(id).delete();
   }
 
-  Future<List<String>> buscarSubcategorias(String categoria) async {
-    DocumentSnapshot document = await _collectionReference.doc(categoria).get();
+  Future<List<String>> buscarSubcategorias(String categoriaSelecionada) async {
+    print('Buscando sugestões para: $categoriaSelecionada');
 
-    if (document.exists) {
-      // Verifique se o documento existe antes de acessar os dados
-      Map<String, dynamic> data = document.data() as Map<String, dynamic>;
-      List<String> subcategorias = List<String>.from(data['categorias']);
+    if (categoriaSelecionada.isEmpty) {
+      return [];
+    }
 
-      print('Metodo Buscar Categorias');
-      return subcategorias;
-    } else {
+    try {
+      // Acesse o documento com base na categoria selecionada pelo usuário
+      DocumentSnapshot categoriaDoc = await FirebaseFirestore.instance
+          .collection('categorias')
+          .doc(categoriaSelecionada) // Use a variável correta aqui
+          .get();
+
+      if (!categoriaDoc.exists) {
+        print('O documento da categoria selecionada não existe');
+        return [];
+      }
+
+      Map<String, dynamic>? data = categoriaDoc.data() as Map<String, dynamic>?;
+
+      if (data == null || !data.containsKey('categoriasOrganizadas')) {
+        print('Os dados no documento estão vazios ou não contêm subcategorias');
+        return [];
+      }
+
+      List<String> subcategorias =
+          (data['categoriasOrganizadas'] as Map<String, dynamic>).keys.toList();
+
+      return subcategorias = ['teste', 'testando'];
+    } catch (e, stackTrace) {
+      print('Erro ao buscar subcategorias: $e\n$stackTrace');
       return [];
     }
   }
