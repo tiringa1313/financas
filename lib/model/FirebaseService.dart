@@ -32,39 +32,44 @@ class FirebaseService implements FirebaseServiceBase {
     await _collectionReference.doc(id).delete();
   }
 
-  Future<List<String>> buscarSubcategorias(String categoriaSelecionada) async {
-    print('Buscando sugestões para: $categoriaSelecionada');
+  Future<List<String>> buscarSubcategorias(String subcategoria) async {
+    print('Buscando sugestões para: $subcategoria');
 
-    if (categoriaSelecionada.isEmpty) {
+    if (subcategoria.isEmpty) {
       return [];
     }
 
-    try {
-      // Acesse o documento com base na categoria selecionada pelo usuário
-      DocumentSnapshot categoriaDoc = await FirebaseFirestore.instance
-          .collection('categorias')
-          .doc(categoriaSelecionada) // Use a variável correta aqui
-          .get();
-
-      if (!categoriaDoc.exists) {
-        print('O documento da categoria selecionada não existe');
-        return [];
-      }
-
-      Map<String, dynamic>? data = categoriaDoc.data() as Map<String, dynamic>?;
-
-      if (data == null || !data.containsKey('categoriasOrganizadas')) {
-        print('Os dados no documento estão vazios ou não contêm subcategorias');
-        return [];
-      }
-
-      List<String> subcategorias =
-          (data['categoriasOrganizadas'] as Map<String, dynamic>).keys.toList();
-
-      return subcategorias = ['teste', 'testando'];
-    } catch (e, stackTrace) {
-      print('Erro ao buscar subcategorias: $e\n$stackTrace');
+    // Certifique-se de que 'subcategoria' não é null
+    if (subcategoria == null) {
+      print('A subcategoria é null');
       return [];
     }
+
+    // Acesse o documento com base na subcategoria fornecida
+    DocumentSnapshot categoriaDoc = await FirebaseFirestore.instance
+        .collection('categorias')
+        .doc(subcategoria)
+        .get();
+
+    print('Dados do DocumentSnapshot: ${categoriaDoc.data()}');
+
+    if (!categoriaDoc.exists) {
+      print('O documento da subcategoria não existe');
+      return [];
+    }
+
+    Map<String, dynamic> campos = categoriaDoc.data() as Map<String, dynamic>;
+
+    if (campos == null) {
+      print('Os dados no documento estão vazios');
+      return [];
+    }
+
+    // Obtenha todas as chaves do mapa e atribua à lista de sugestões
+    List<String> sugestoes = campos.keys.toList();
+
+    print('Sugestões: $sugestoes');
+
+    return sugestoes;
   }
 }
