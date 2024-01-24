@@ -33,7 +33,7 @@ class FirebaseService implements FirebaseServiceBase {
   }
 
   Future<List<String>> buscarSubcategorias(String subcategoria) async {
-    print('Buscando sugestões para: $subcategoria');
+    printInfo('Buscando sugestões para', {'subcategoria': subcategoria});
 
     if (subcategoria.isEmpty) {
       return [];
@@ -41,7 +41,7 @@ class FirebaseService implements FirebaseServiceBase {
 
     // Certifique-se de que 'subcategoria' não é null
     if (subcategoria == null) {
-      print('A subcategoria é null');
+      printInfo('A subcategoria é null', {});
       return [];
     }
 
@@ -51,25 +51,29 @@ class FirebaseService implements FirebaseServiceBase {
         .doc(subcategoria)
         .get();
 
-    print('Dados do DocumentSnapshot: ${categoriaDoc.data()}');
+    printInfo('Dados do DocumentSnapshot', {'data': categoriaDoc.data()});
 
     if (!categoriaDoc.exists) {
-      print('O documento da subcategoria não existe');
+      printInfo('O documento da subcategoria não existe', {});
       return [];
     }
 
     Map<String, dynamic> campos = categoriaDoc.data() as Map<String, dynamic>;
 
     if (campos == null) {
-      print('Os dados no documento estão vazios');
+      printInfo('Os dados no documento estão vazios', {});
       return [];
     }
 
     // Obtenha todas as chaves do mapa e atribua à lista de sugestões
     List<String> sugestoes = campos.keys.toList();
 
-    print('Sugestões: $sugestoes');
+    printInfo('Sugestões', {'sugestoes': sugestoes});
 
     return sugestoes;
+  }
+
+  void printInfo(String message, Map<String, dynamic> data) {
+    print('[$message] $data');
   }
 }

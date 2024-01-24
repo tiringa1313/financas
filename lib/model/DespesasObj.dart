@@ -1,21 +1,25 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class DespesasObj {
   late int _id;
   late int _idUsuario;
   late String _tipoDespesa;
-  late String _valorDespesa; // Alterado para double
-  late String _dataDespesa;
+  late double _valorDespesa; // Alterado para double
+  late DateTime _dataDespesa; // Alterado para DateTime
 
   // Construtor padrão
   DespesasObj(this._idUsuario, this._tipoDespesa, this._valorDespesa,
       this._dataDespesa);
 
   // Construtor nomeado para criar uma instância da classe a partir de um mapa
-  DespesasObj.fromMap(Map<String, dynamic> map)
-      : _id = map['id'],
-        _idUsuario = map['idUsuario'],
-        _tipoDespesa = map['tipoDespesa'],
-        _valorDespesa = map['valorDespesa'], // Converte para double
-        _dataDespesa = map['dataDespesa'];
+  Map<String, dynamic> toMap() {
+    return {
+      'idUsuario': _idUsuario,
+      'tipoDespesa': _tipoDespesa,
+      'valorDespesa': _valorDespesa,
+      'dataDespesa': _dataDespesa,
+    };
+  }
 
   // Getter e Setter para id
   get id => this._id;

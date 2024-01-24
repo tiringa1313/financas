@@ -1,5 +1,7 @@
+import 'dart:ffi';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:financas/model/AuthManager.dart';
+import 'package:financas/model/DespesasObj.dart';
 import 'package:financas/model/FirebaseService.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -26,11 +28,17 @@ class _DespesasState extends State<Despesas> {
   TextEditingController _controllerData =
       TextEditingController(); // recebe a data selecionada no  picker
 
+  TextEditingController _controllerSubcategoria = // recebe a subcategoria
+      TextEditingController();
+
 //Todas as variaveis aqui      *************************************************
 
+  int? _idUsuario;
   String? categoriaFrontEnd;
   String? categoriaSelecionada;
   DateTime? _dataSelecionada = DateTime.now();
+  String? _tipoDespesa;
+  double? _valorDespesa;
 
 //Todos os metodos deverao ser implementados aqui ******************************
 
@@ -76,6 +84,46 @@ class _DespesasState extends State<Despesas> {
   }
 
   buscarUltimasDespesasSalvas() {}
+
+  OrganizaDadosParaSalvar() async {
+    String? userId = AuthManager.userId;
+
+    // ... (código existente para preencher outras variáveis)
+
+    // Certifique-se de que as variáveis necessárias foram preenchidas
+    if (userId == null ||
+        categoriaSelecionada == null ||
+        _tipoDespesa == null ||
+        _valorDespesa == null ||
+        _dataSelecionada == null) {
+      print('Preencha todos os campos obrigatórios.');
+      return;
+    }
+
+    // Crie uma instância de DespesasObj
+    DespesasObj despesasObj = DespesasObj(
+        _idUsuario!, _tipoDespesa!, _valorDespesa!, _dataSelecionada!);
+
+    // Instancie a classe FirebaseService
+    FirebaseService firebaseService = FirebaseService(categoriaSelecionada!);
+
+    // Converta o objeto DespesasObj para um Map<String, dynamic>
+    Map<String, dynamic> dadosParaSalvar = despesasObj.toMap();
+
+    try {
+      // Chame o método adicionarItem para salvar os dados no Firestore
+      await firebaseService.adicionarItem(dadosParaSalvar);
+
+      // Limpe os campos ou faça qualquer outra coisa que seja necessária após salvar os dados
+      _controllerValorDespesa.clear();
+      _controllerData.clear();
+      _controllerSubcategoria.clear();
+
+      // Continue com outras lógicas, se necessário
+    } catch (e) {
+      print('Erro ao salvar os dados: $e');
+    }
+  }
 
 //*****************************************************************************/
 //*********************** Inicio do Layout ************************************/
@@ -245,7 +293,7 @@ class _DespesasState extends State<Despesas> {
                 },
                 onSelected: (String selection) {
                   // Lógica para o que acontece quando uma sugestão é selecionada
-                  print('Você selecionou $selection');
+                  _tipoDespesa = selection;
                 },
                 fieldViewBuilder: (
                   BuildContext context,
@@ -343,7 +391,9 @@ class _DespesasState extends State<Despesas> {
           size: 30,
         ),
         backgroundColor: Color.fromARGB(255, 248, 76, 76),
-        onPressed: () {},
+        onPressed: () {
+          OrganizaDadosParaSalvar();
+        },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
