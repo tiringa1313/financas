@@ -85,44 +85,43 @@ class _DespesasState extends State<Despesas> {
 
   buscarUltimasDespesasSalvas() {}
 
-  OrganizaDadosParaSalvar() async {
+  void OrganizaDadosParaSalvar() async {
     String? userId = AuthManager.userId;
+    double? _valorDespesa;
 
-    // ... (código existente para preencher outras variáveis)
+    if (_controllerValorDespesa.text.isNotEmpty) {
+      _valorDespesa = double.tryParse(_controllerValorDespesa.text);
+      if (_valorDespesa == null) {
+        print('O valor do campo de despesa não é um número válido.');
+        return;
+      }
+    } else {
+      print('O campo de valor de despesa está vazio.');
+      return;
+    }
 
     // Certifique-se de que as variáveis necessárias foram preenchidas
     if (userId == null ||
         categoriaSelecionada == null ||
         _tipoDespesa == null ||
-        _valorDespesa == null ||
         _dataSelecionada == null) {
       print('Preencha todos os campos obrigatórios.');
       return;
     }
 
-    // Crie uma instância de DespesasObj
-    DespesasObj despesasObj = DespesasObj(
-        _idUsuario!, _tipoDespesa!, _valorDespesa!, _dataSelecionada!);
+    // Criar uma instância de DespesasObj
+    DespesasObj despesa = DespesasObj(
+      userId,
+      _tipoDespesa!, // Substituído por _tipoDespesa ao invés de categoriaSelecionada
+      _valorDespesa,
+      _dataSelecionada!,
+    );
 
-    // Instancie a classe FirebaseService
-    FirebaseService firebaseService = FirebaseService(categoriaSelecionada!);
-
-    // Converta o objeto DespesasObj para um Map<String, dynamic>
-    Map<String, dynamic> dadosParaSalvar = despesasObj.toMap();
-
-    try {
-      // Chame o método adicionarItem para salvar os dados no Firestore
-      await firebaseService.adicionarItem(dadosParaSalvar);
-
-      // Limpe os campos ou faça qualquer outra coisa que seja necessária após salvar os dados
-      _controllerValorDespesa.clear();
-      _controllerData.clear();
-      _controllerSubcategoria.clear();
-
-      // Continue com outras lógicas, se necessário
-    } catch (e) {
-      print('Erro ao salvar os dados: $e');
-    }
+    // Você pode usar a instância 'despesa' conforme necessário
+    print('idUsuario: ${despesa.idUsuario}');
+    print('tipo despesa: ${despesa.tipoReceita}');
+    print('valor despesa: ${despesa.valorReceita}');
+    print('data despesa: ${despesa.dataReceita}');
   }
 
 //*****************************************************************************/

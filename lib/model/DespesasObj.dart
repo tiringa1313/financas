@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DespesasObj {
   late int _id;
-  late int _idUsuario;
+  late String _idUsuario;
   late String _tipoDespesa;
   late double _valorDespesa; // Alterado para double
   late DateTime _dataDespesa; // Alterado para DateTime
