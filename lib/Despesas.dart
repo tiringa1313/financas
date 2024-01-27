@@ -122,6 +122,21 @@ class _DespesasState extends State<Despesas> {
     print('tipo despesa: ${despesa.tipoReceita}');
     print('valor despesa: ${despesa.valorReceita}');
     print('data despesa: ${despesa.dataReceita}');
+
+    try {
+      // Criar uma instância do seu serviço Firebase
+      FirebaseService firebaseService = FirebaseService(categoriaSelecionada!);
+
+      // Converter o objeto DespesasObj para um mapa
+      Map<String, dynamic> despesaMap = despesa.toMap();
+
+      // Adicionar o item ao Firestore
+      await firebaseService.adicionarItem(despesaMap);
+
+      print('Dados salvos com sucesso no Firebase!');
+    } catch (e) {
+      print('Erro ao salvar os dados no Firebase: $e');
+    }
   }
 
 //*****************************************************************************/
