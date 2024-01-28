@@ -48,6 +48,16 @@ class _DespesasState extends State<Despesas> {
     _dataSelecionada = DateTime.now();
   }
 
+  void _mostrarMensagem(String mensagem, {bool erro = false}) {
+    final snackBar = SnackBar(
+      content: Text(mensagem),
+      duration: Duration(seconds: 3),
+      backgroundColor: erro ? Colors.red : Colors.green,
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
   Future<String?> _selectDate(BuildContext context) async {
     DateTime? picked = await showDatePicker(
       context: context,
@@ -89,14 +99,14 @@ class _DespesasState extends State<Despesas> {
     String? userId = AuthManager.userId;
     double? _valorDespesa;
 
-    if (_controllerValorDespesa.text.isNotEmpty) {
-      _valorDespesa = double.tryParse(_controllerValorDespesa.text);
-      if (_valorDespesa == null) {
-        print('O valor do campo de despesa não é um número válido.');
-        return;
-      }
-    } else {
-      print('O campo de valor de despesa está vazio.');
+    if (_controllerValorDespesa.text.isEmpty) {
+      _mostrarMensagem('Informe um valor válido!!', erro: true);
+      return;
+    }
+
+    _valorDespesa = double.tryParse(_controllerValorDespesa.text);
+    if (_valorDespesa == null || _valorDespesa == 0.00) {
+      _mostrarMensagem('Informe um valor válido!!', erro: true);
       return;
     }
 
@@ -105,7 +115,7 @@ class _DespesasState extends State<Despesas> {
         categoriaSelecionada == null ||
         _tipoDespesa == null ||
         _dataSelecionada == null) {
-      print('Preencha todos os campos obrigatórios.');
+      _mostrarMensagem('Preencha todos os campos!!', erro: true);
       return;
     }
 
@@ -133,7 +143,20 @@ class _DespesasState extends State<Despesas> {
       // Adicionar o item ao Firestore
       await firebaseService.adicionarItem(despesaMap);
 
-      print('Dados salvos com sucesso no Firebase!');
+      // Limpar os campos após o salvamento bem-sucedido
+      _controllerValorDespesa.clear();
+      _controllerSubcategoria.clear();
+      _tipoDespesa = null;
+      _dataSelecionada = DateTime.now();
+
+      // Limpar a categoriaFrontEnd e categoriaSelecionada
+      setState(() {
+        categoriaFrontEnd = null;
+        categoriaSelecionada = null;
+      });
+
+      // Exibir mensagem de dados salvos
+      print('Dados salvos com sucesso!');
     } catch (e) {
       print('Erro ao salvar os dados no Firebase: $e');
     }
