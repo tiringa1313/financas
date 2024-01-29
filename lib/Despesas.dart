@@ -6,6 +6,7 @@ import 'package:financas/model/FirebaseService.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:get_it/get_it.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 
 class Despesas extends StatefulWidget {
   const Despesas({super.key});
@@ -28,8 +29,7 @@ class _DespesasState extends State<Despesas> {
   TextEditingController _controllerData =
       TextEditingController(); // recebe a data selecionada no  picker
 
-  TextEditingController _controllerSubcategoria = // recebe a subcategoria
-      TextEditingController();
+  TextEditingController _controllerAutocomplete = TextEditingController();
 
 //Todas as variaveis aqui      *************************************************
 
@@ -145,15 +145,21 @@ class _DespesasState extends State<Despesas> {
 
       // Limpar os campos após o salvamento bem-sucedido
       _controllerValorDespesa.clear();
-      _controllerSubcategoria.clear();
       _tipoDespesa = null;
       _dataSelecionada = DateTime.now();
 
-      // Limpar a categoriaFrontEnd e categoriaSelecionada
       setState(() {
+        _controllerValorDespesa.clear();
+        _tipoDespesa = null;
+        _dataSelecionada = DateTime.now();
         categoriaFrontEnd = null;
         categoriaSelecionada = null;
       });
+
+      String textoAtual = _controllerAutocomplete.text;
+      print('Texto atual do Autocomplete: $textoAtual');
+
+      _controllerAutocomplete.clear();
 
       // Exibir mensagem de dados salvos
       print('Dados salvos com sucesso!');
@@ -310,57 +316,55 @@ class _DespesasState extends State<Despesas> {
 
               SizedBox(height: 25),
 
-//**************************************** */ Campo de Autocomplete ************
-              Autocomplete<String>(
-                optionsBuilder: (TextEditingValue textEditingValue) async {
-                  if (textEditingValue.text == '' ||
-                      categoriaSelecionada == null) {
+//**************************************** Campo de Autocomplete ************
+              TypeAheadField<String>(
+                textFieldConfiguration: TextFieldConfiguration(
+                  controller: _controllerAutocomplete,
+                  decoration: InputDecoration(
+                    hintText: 'Buscar subcategoria',
+                    prefixIcon: Icon(Icons.search),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide(
+                        color: Colors.red,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide(
+                        color: Colors.red,
+                      ),
+                    ),
+                  ),
+                ),
+                suggestionsCallback: (pattern) async {
+                  if (pattern.isEmpty || categoriaSelecionada == null) {
                     return const Iterable<String>.empty();
                   }
 
+                  // Busca as subcategorias com base na categoriaSelecionada no Firebase
                   List<String> subcategorias =
                       await FirebaseService('categorias')
                           .buscarSubcategorias(categoriaSelecionada!);
 
+                  // Filtra as subcategorias com base no texto inserido no campo de texto
                   return subcategorias.where((String option) {
-                    return option
-                        .toLowerCase()
-                        .contains(textEditingValue.text.toLowerCase());
+                    return option.toLowerCase().contains(pattern.toLowerCase());
                   });
                 },
-                onSelected: (String selection) {
-                  // Lógica para o que acontece quando uma sugestão é selecionada
-                  _tipoDespesa = selection;
-                },
-                fieldViewBuilder: (
-                  BuildContext context,
-                  TextEditingController fieldTextEditingController,
-                  FocusNode fieldFocusNode,
-                  VoidCallback onFieldSubmitted,
-                ) {
-                  return TextFormField(
-                    controller: fieldTextEditingController,
-                    focusNode: fieldFocusNode,
-                    decoration: InputDecoration(
-                      hintText: 'Buscar subcategoria',
-                      prefixIcon: Icon(Icons.search),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: BorderSide(
-                          color: Colors.red, // Cor vermelha para a borda focada
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: BorderSide(
-                          color: Colors
-                              .red, // Cor vermelha para a borda habilitada
-                        ),
-                      ),
-                    ),
+                itemBuilder: (context, String suggestion) {
+                  return ListTile(
+                    title: Text(suggestion),
                   );
                 },
+                onSuggestionSelected: (String suggestion) {
+                  setState(() {
+                    _controllerAutocomplete.text = suggestion;
+                    _tipoDespesa = suggestion;
+                  });
+                },
               ),
+
               SizedBox(height: 25),
 
               Padding(
