@@ -39,12 +39,14 @@ class _DespesasState extends State<Despesas> {
   DateTime? _dataSelecionada = DateTime.now();
   String? _tipoDespesa;
   double? _valorDespesa;
+  double? _saldoGeral;
 
 //Todos os metodos deverao ser implementados aqui ******************************
 
   @override
   void initState() {
     super.initState();
+    buscarSaldoGeral();
     _dataSelecionada = DateTime.now();
   }
 
@@ -93,6 +95,26 @@ class _DespesasState extends State<Despesas> {
     return '${value.substring(0, value.length - 2)}.${value.substring(value.length - 2)}';
   }
 
+  void buscarSaldoGeral() async {
+    String? userId = AuthManager.userId;
+
+    if (userId == null) {
+      print('Usuário não autenticado!');
+      return;
+    }
+
+    try {
+      // Criar uma instância do seu serviço Firebase
+      FirebaseService firebaseService =
+          FirebaseService('usuarios'); // Use 'usuarios' como coleção
+
+      // Buscar o saldo geral do usuário
+      String saldoGeral = await firebaseService.buscarSaldoGeralUsuario(userId);
+    } catch (e) {
+      print('Erro ao buscar o saldo geral do usuário: $e');
+    }
+  }
+
   buscarUltimasDespesasSalvas() {}
 
   void OrganizaDadosParaSalvar() async {
@@ -127,12 +149,6 @@ class _DespesasState extends State<Despesas> {
       _dataSelecionada!,
     );
 
-    // Você pode usar a instância 'despesa' conforme necessário
-    print('idUsuario: ${despesa.idUsuario}');
-    print('tipo despesa: ${despesa.tipoReceita}');
-    print('valor despesa: ${despesa.valorReceita}');
-    print('data despesa: ${despesa.dataReceita}');
-
     try {
       // Criar uma instância do seu serviço Firebase
       FirebaseService firebaseService = FirebaseService(categoriaSelecionada!);
@@ -162,7 +178,7 @@ class _DespesasState extends State<Despesas> {
       _controllerAutocomplete.clear();
 
       // Exibir mensagem de dados salvos
-      print('Dados salvos com sucesso!');
+      _mostrarMensagem('Despesa salva com sucesso!');
     } catch (e) {
       print('Erro ao salvar os dados no Firebase: $e');
     }
@@ -323,6 +339,23 @@ class _DespesasState extends State<Despesas> {
                   decoration: InputDecoration(
                     hintText: 'Buscar subcategoria',
                     prefixIcon: Icon(Icons.search),
+                    suffixIcon: _controllerAutocomplete.text.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(
+                              Icons.clear,
+                              size:
+                                  20, // Ajuste o tamanho do ícone conforme necessário
+                              color: Colors
+                                  .red, // Ajuste a cor do ícone conforme necessário
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _controllerAutocomplete.clear();
+                                _tipoDespesa = null;
+                              });
+                            },
+                          )
+                        : null,
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(25),
                       borderSide: BorderSide(
@@ -362,6 +395,16 @@ class _DespesasState extends State<Despesas> {
                     _controllerAutocomplete.text = suggestion;
                     _tipoDespesa = suggestion;
                   });
+                },
+                // Defina um widget personalizado para a mensagem "No items found"
+                noItemsFoundBuilder: (context) {
+                  return Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'Buscando itens...',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  );
                 },
               ),
 

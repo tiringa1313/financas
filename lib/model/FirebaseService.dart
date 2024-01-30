@@ -28,6 +28,47 @@ class FirebaseService implements FirebaseServiceBase {
   }
 
   @override
+  Future<void> atualizarSaldo(int idUsuario, double novoSaldo) async {
+    try {
+      await _collectionReference.doc(idUsuario.toString()).update({
+        'saldoGeral': novoSaldo,
+      });
+    } catch (e) {
+      printInfo('Erro ao atualizar o saldo do usuário: $e', {});
+      throw e; // Você pode lidar com o erro de acordo com a lógica do seu aplicativo
+    }
+  }
+
+  Future<String> buscarSaldoGeralUsuario(String idUsuario) async {
+    try {
+      // Acesse o documento do usuário com base no ID fornecido
+      DocumentSnapshot usuarioDoc = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(idUsuario)
+          .get();
+
+      if (!usuarioDoc.exists) {
+        // O documento do usuário não existe
+        printInfo('O documento do usuário não existe', {});
+        return '0.0'; // ou qualquer valor padrão que você queira retornar como string
+      }
+
+      // Obtenha o valor de 'saldoGeral' do documento do usuário como uma string
+      Map<String, dynamic> usuarioData =
+          usuarioDoc.data() as Map<String, dynamic>;
+      String saldoGeral = usuarioData['saldoGeral']?.toString() ?? '0.0';
+
+      printInfo('Saldo Geral do Usuário', {'saldoGeral': saldoGeral});
+
+      return saldoGeral;
+    } catch (e) {
+      // Lidar com erros, se necessário
+      printInfo('Erro ao buscar o saldo geral do usuário: $e', {});
+      throw e; // ou retorne um valor padrão, dependendo da lógica do seu aplicativo
+    }
+  }
+
+  @override
   Future<void> deletarItem(String id) async {
     await _collectionReference.doc(id).delete();
   }
