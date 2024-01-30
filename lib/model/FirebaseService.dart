@@ -10,6 +10,7 @@ class FirebaseService implements FirebaseServiceBase {
   }
 
   CollectionReference getUsuariosCollectionReference() {
+    // Retorna a colecao de usuarios
     return FirebaseFirestore.instance.collection('usuarios');
   }
 
@@ -42,8 +43,9 @@ class FirebaseService implements FirebaseServiceBase {
 
       if (documentSnapshot.exists) {
         // O documento existe, então podemos atualizar o saldo
+
         await collectionReference.doc(idUsuario).update({
-          'saldoGeral': novoSaldo,
+          'saldoGeral': novoSaldo.toStringAsFixed(2),
         });
       } else {
         printInfo('Documento do usuário não encontrado', {});

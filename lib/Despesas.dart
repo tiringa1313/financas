@@ -160,7 +160,6 @@ class _DespesasState extends State<Despesas> {
       double novoSaldo = _saldoGeral! - _valorDespesa;
 
       // chama o metodo para atualizar o saldo geral do usuario
-
       firebaseService.atualizarSaldo(
           userId, novoSaldo, firebaseService.getUsuariosCollectionReference());
 
