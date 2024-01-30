@@ -9,6 +9,10 @@ class FirebaseService implements FirebaseServiceBase {
         FirebaseFirestore.instance.collection(collectionName);
   }
 
+  CollectionReference getUsuariosCollectionReference() {
+    return FirebaseFirestore.instance.collection('usuarios');
+  }
+
   @override
   Future<void> adicionarItem(Map<String, dynamic> item) async {
     await _collectionReference.add(item);
@@ -27,15 +31,26 @@ class FirebaseService implements FirebaseServiceBase {
     await _collectionReference.doc(id).update(item);
   }
 
-  @override
-  Future<void> atualizarSaldo(int idUsuario, double novoSaldo) async {
+  Future<void> atualizarSaldo(String idUsuario, double novoSaldo,
+      CollectionReference collectionReference) async {
     try {
-      await _collectionReference.doc(idUsuario.toString()).update({
-        'saldoGeral': novoSaldo,
-      });
+      // Adicione um print para exibir a coleção
+      print('Coleção: ${collectionReference.path}');
+
+      DocumentSnapshot documentSnapshot =
+          await collectionReference.doc(idUsuario).get();
+
+      if (documentSnapshot.exists) {
+        // O documento existe, então podemos atualizar o saldo
+        await collectionReference.doc(idUsuario).update({
+          'saldoGeral': novoSaldo,
+        });
+      } else {
+        printInfo('Documento do usuário não encontrado', {});
+      }
     } catch (e) {
       printInfo('Erro ao atualizar o saldo do usuário: $e', {});
-      throw e; // Você pode lidar com o erro de acordo com a lógica do seu aplicativo
+      throw e;
     }
   }
 

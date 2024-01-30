@@ -109,7 +109,10 @@ class _DespesasState extends State<Despesas> {
           FirebaseService('usuarios'); // Use 'usuarios' como coleção
 
       // Buscar o saldo geral do usuário
-      String saldoGeral = await firebaseService.buscarSaldoGeralUsuario(userId);
+      String saldoGeralString =
+          await firebaseService.buscarSaldoGeralUsuario(userId);
+      // Converte o saldoGeral String para Double
+      _saldoGeral = double.parse(saldoGeralString);
     } catch (e) {
       print('Erro ao buscar o saldo geral do usuário: $e');
     }
@@ -152,6 +155,14 @@ class _DespesasState extends State<Despesas> {
     try {
       // Criar uma instância do seu serviço Firebase
       FirebaseService firebaseService = FirebaseService(categoriaSelecionada!);
+
+      // Subtrai o valor da despesa ao valor do saldo geral
+      double novoSaldo = _saldoGeral! - _valorDespesa;
+
+      // chama o metodo para atualizar o saldo geral do usuario
+
+      firebaseService.atualizarSaldo(
+          userId, novoSaldo, firebaseService.getUsuariosCollectionReference());
 
       // Converter o objeto DespesasObj para um mapa
       Map<String, dynamic> despesaMap = despesa.toMap();
