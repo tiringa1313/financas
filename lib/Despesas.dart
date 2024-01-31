@@ -31,6 +31,8 @@ class _DespesasState extends State<Despesas> {
 
   TextEditingController _controllerAutocomplete = TextEditingController();
 
+  List<Map<String, dynamic>> listUltimasDespesas = [];
+
 //Todas as variaveis aqui      *************************************************
 
   int? _idUsuario;
@@ -47,6 +49,7 @@ class _DespesasState extends State<Despesas> {
   void initState() {
     super.initState();
     buscarSaldoGeral();
+    _carregarDespesas();
     _dataSelecionada = DateTime.now();
   }
 
@@ -93,6 +96,20 @@ class _DespesasState extends State<Despesas> {
     }
 
     return '${value.substring(0, value.length - 2)}.${value.substring(value.length - 2)}';
+  }
+
+  Future<void> _carregarDespesas() async {
+    try {
+      FirebaseService firebaseService = FirebaseService('rastreamentoDespesas');
+      List<Map<String, dynamic>> despesas =
+          await firebaseService.obterUltimasDespesas();
+
+      setState(() {
+        listUltimasDespesas = despesas;
+      });
+    } catch (e) {
+      print('Erro ao carregar despesas: $e');
+    }
   }
 
   void buscarSaldoGeral() async {
@@ -173,10 +190,19 @@ class _DespesasState extends State<Despesas> {
       // Adicionar o item ao Firestore
       await firebaseService.adicionarItem(despesaMap);
 
-      // Limpar os campos após o salvamento bem-sucedido
-      _controllerValorDespesa.clear();
-      _tipoDespesa = null;
-      _dataSelecionada = DateTime.now();
+      //Adicionar o item na lista de rastreamento para listar as ultimas transacoes
+
+      Map<String, dynamic> rastreamentoData = {
+        'idUsuario': userId,
+        'tipo': categoriaSelecionada,
+        'subcategorias': _tipoDespesa,
+        'valor': _valorDespesa,
+        'data': DateTime.now(),
+        'mes': DateFormat.MMMM('pt_BR').format(DateTime.now()),
+      };
+
+      // chama o metodo para salvar as informacoes de rastreamento de despesas
+      await firebaseService.adicionarRastreamentoDespesa(rastreamentoData);
 
       setState(() {
         _controllerValorDespesa.clear();
@@ -469,8 +495,48 @@ class _DespesasState extends State<Despesas> {
                 ),
               ),
 
-//********** */ lista devera ser implementada aqui ****************************/
-
+              // ********** */ Lista deverá ser implementada aqui ****************************/
+              Container(
+                height: 200, // Adapte a altura conforme necessário
+                child: ListView.builder(
+                  itemCount: listUltimasDespesas.length,
+                  itemBuilder: (context, index) {
+                    final despesa = listUltimasDespesas[index];
+                    return ListTile(
+                      title: Text(despesa['subcategorias'] ?? 'Sem tipo'),
+                      subtitle: Text(
+                        "R\$ ${despesa['valor']} - ${DateFormat('dd/MM/yyyy', 'pt_BR').format((despesa['data'] as Timestamp).toDate())}",
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              Icons.edit,
+                              color: Color.fromARGB(255, 30, 167, 18),
+                            ),
+                            onPressed: () {
+                              // Implemente a lógica de edição se necessário
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.delete,
+                              color: Colors.red,
+                            ),
+                            onPressed: () {
+                              // Implemente a lógica de exclusão se necessário
+                            },
+                          ),
+                        ],
+                      ),
+                      onTap: () {
+                        // Pode manter a lógica aqui, se necessário
+                      },
+                    );
+                  },
+                ),
+              ),
 //***********/ FIM DO LISTVIEW ********************************************** */
             ],
           ),
@@ -494,389 +560,3 @@ class _DespesasState extends State<Despesas> {
     );
   }
 }
-
-
-
-
-/*
-
- TextEditingController _controllerData = TextEditingController();
-  TextEditingController _controllerValorDespesa = TextEditingController();
-  TextEditingController _controllerSelecao = TextEditingController();
-  TextEditingController _controllerBuscar = TextEditingController();
-
-  ValueKey<String> autocompleteKey = ValueKey("autocomplete1");
-  // Adicione esta linha
-  Map<String, String> despesaIdParaNomeColecao = {};
-  List<Map<String, dynamic>> ultimasDespesas = []; // Lista de últimas despesas
-
-  DateTime? _dataSelecionada = DateTime.now();
-
-  String? categoriaSelecionadaNomeAmigavel;
-  String? userId = AuthManager.userId;
-  String? _despesaEditandoId;
-  String? _editandoDespesa = '0';
-
-  @override
-  void initState() {
-    super.initState();
-
-    despesaIdParaNomeColecao = {};
-    // ... outras inicializações ...
-    _controllerValorDespesa.addListener(() {
-      final text = _formatCurrency(_controllerValorDespesa.text);
-      _controllerValorDespesa.value = TextEditingValue(
-        text: text,
-        selection: TextSelection.collapsed(offset: text.length),
-      );
-    });
-  }
-
-  void _mostrarMensagem(String mensagem, {bool erro = false}) {
-    final snackBar = SnackBar(
-      content: Text(mensagem),
-      duration: Duration(seconds: 3),
-      backgroundColor: erro ? Colors.red : Colors.green,
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  }
-
-  String _formatCurrency(String value) {
-    if (value.isEmpty) {
-      return '0.00';
-    }
-
-    value = value.replaceAll(RegExp('[^0-9]'), '');
-    value = value.replaceFirst(RegExp('^0+'), '');
-
-    while (value.length < 3) {
-      value = '0$value';
-    }
-
-    return '${value.substring(0, value.length - 2)}.${value.substring(value.length - 2)}';
-  }
-
-//********************Salvar Despesa******************************************* */
-//********************Salvar Despesa******************************************* */
-  void _salvarDespesa() async {
-    if (userId == null) {
-      _mostrarMensagem(
-          'Usuário não autenticado. Faça login antes de salvar a despesa.',
-          erro: true);
-      return;
-    }
-
-    try {
-      String valorDespesaUser =
-          _controllerValorDespesa.text.replaceAll(',', '.');
-      double valorDespesa = double.tryParse(valorDespesaUser) ?? 0.0;
-      String categoria = categoriaSelecionadaNomeAmigavel ?? "Sem Categoria";
-      String subcategoria = _controllerSelecao.text;
-      String? nomeColecaoFirebase =
-          categoriasMapa[categoriaSelecionadaNomeAmigavel];
-
-      if (valorDespesa == 0.00 || subcategoria.isEmpty) {
-        _mostrarMensagem('Verifique todos os campos!', erro: true);
-        return;
-      }
-      if (nomeColecaoFirebase == null) {
-        _mostrarMensagem('Escolha uma categoria', erro: true);
-        return;
-      }
-
-      _controllerData.text = DateFormat('dd/MM/yyyy', 'pt_BR')
-          .format(_dataSelecionada ?? DateTime.now());
-
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(userId)
-          .get();
-      double saldoGeral = double.parse(userDoc['saldoGeral'].toString());
-
-      Map<String, dynamic> dadosDespesa = {
-        'idUsuario': userId,
-        'categoria': categoria,
-        'subcategoria': subcategoria,
-        'valor': valorDespesa.toString(),
-        'data': Timestamp.fromDate(_dataSelecionada!)
-      };
-
-      String mensagemSucesso;
-      if (_despesaEditandoId != null) {
-        await FirebaseFirestore.instance
-            .collection(nomeColecaoFirebase)
-            .doc(_despesaEditandoId)
-            .update(dadosDespesa);
-
-        _despesaEditandoId = null;
-        mensagemSucesso = 'Edição realizada com sucesso!';
-      } else {
-        await FirebaseFirestore.instance
-            .collection(nomeColecaoFirebase)
-            .add(dadosDespesa);
-
-        mensagemSucesso = 'Despesa salva com sucesso!';
-      }
-
-      await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(userId)
-          .update({'saldoGeral': saldoGeral.toString()});
-
-      _mostrarMensagem(mensagemSucesso);
-
-      // Ocultar o teclado
-      FocusScope.of(context).unfocus();
-
-      _controllerValorDespesa.clear();
-      _controllerData.clear();
-      _controllerSelecao.clear();
-      setState(() {
-        categoriaSelecionadaNomeAmigavel = null;
-        categoriaSelecionada = null;
-        _dataSelecionada = DateTime.now();
-        autocompleteKey = ValueKey("autocomplete${DateTime.now()}");
-      });
-    } catch (e) {
-      print('Erro ao salvar despesa: $e');
-      _mostrarMensagem('Erro ao salvar a despesa. Tente novamente.',
-          erro: true);
-    }
-  }
-
-  void _carregarDadosParaEdicao(Map<String, dynamic> transacao) {
-    String idDespesa = transacao['id'];
-    _despesaEditandoId = idDespesa;
-    _editandoDespesa = '1';
-
-    double valorDespesa = double.tryParse(transacao['valor'].toString()) ?? 0.0;
-    _controllerValorDespesa.text = valorDespesa.toStringAsFixed(2);
-
-    String categoriaDespesa = transacao['categoria'];
-    String subcategoriaDespesa = transacao['subcategoria'];
-    Timestamp timestamp = transacao['data'];
-    DateTime dataDespesa = timestamp.toDate();
-
-    Map<String, String> categoriaMap = {
-      'despesasEssenciais': 'Gastos Essenciais',
-      'despesasLivres': 'Gastos Livres',
-      'despesasEducacao': 'Gastos com Educação'
-      // Adicione mais mapeamentos conforme necessário
-    };
-
-    String categoriaMapeada =
-        categoriaMap[categoriaDespesa] ?? categoriaDespesa;
-    categoriaSelecionadaNomeAmigavel = categoriaMapeada;
-    categoriaSelecionada = categoriaMap.entries
-        .firstWhere((entry) => entry.value == categoriaMapeada,
-            orElse: () => MapEntry('', ''))
-        .key;
-
-    // Converter o Timestamp para DateTime e atualizar _dataSelecionada para o DatePicker
-    _dataSelecionada = (transacao['data'] as Timestamp).toDate();
-    _controllerSelecao.text = subcategoriaDespesa;
-
-    setState(() {});
-  }
-
-// Editar despesas ****************************************************************
-  void _editarDespesa(String id, double valor, String categoria,
-      String subcategoria, DateTime data) {
-    // Atualizando os controladores com os valores da despesa
-    _controllerValorDespesa.text =
-        valor.toString(); // Formata o valor para duas casas decimais
-    _controllerSelecao.text = subcategoria; // Atualiza o campo subcategoria
-
-    // Para categoria, você precisa fazer a conversão reversa para selecionar o valor correto no Dropdown
-    categoriaSelecionadaNomeAmigavel = categoria;
-    categoriaSelecionada = categoriasMapa.entries
-        .firstWhere((entry) => entry.key == categoria,
-            orElse: () => MapEntry('', ''))
-        .value;
-
-    _controllerData.text = DateFormat('dd/MM/yyyy')
-        .format(data); // Formata a data para o formato desejado
-
-    // Aqui, você pode mudar para a tela de edição ou exibir os campos de edição
-    // Dependendo da sua UI, você pode querer chamar setState para atualizar a tela
-    // Atualize a lista de despesas e a interface do usuário
-    _carregarUltimasDespesas().then((_) {
-      setState(() {
-        // Atualizações da interface do usuário
-      });
-    });
-  }
-
-//********************Excluir Despesas***************************************** */
-  //********************Excluir Despesas***************************************** */
-  void _excluirDespesa(String idDespesa, String nomeCategoriaDespesa,
-      double valorDespesa) async {
-    try {
-      if (userId == null) {
-        _mostrarMensagem('Usuário não autenticado.', erro: true);
-        return;
-      }
-
-      // Excluir a despesa
-      await FirebaseFirestore.instance
-          .collection(nomeCategoriaDespesa)
-          .doc(idDespesa)
-          .delete();
-
-      // Atualizar a lista de rastreamento removendo a despesa excluída
-      DocumentReference rastreamentoRef = FirebaseFirestore.instance
-          .collection('rastreamentoDespesas')
-          .doc(userId);
-
-      DocumentSnapshot rastreamentoDoc = await rastreamentoRef.get();
-      if (rastreamentoDoc.exists) {
-        Map<String, dynamic> rastreamentoData =
-            rastreamentoDoc.data() as Map<String, dynamic>;
-        List<dynamic> despesasList =
-            rastreamentoData[nomeCategoriaDespesa] ?? [];
-        despesasList.remove(idDespesa); // Remove a despesa pelo ID
-        await rastreamentoRef.update({nomeCategoriaDespesa: despesasList});
-      }
-
-      // Atualizar o saldo geral do usuário após a exclusão da despesa
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(userId)
-          .get();
-
-      double saldoGeral = double.parse(userDoc['saldoGeral'].toString());
-      saldoGeral += valorDespesa;
-
-      await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(userId)
-          .update({'saldoGeral': saldoGeral.toStringAsFixed(2)});
-
-      _mostrarMensagem('Despesa excluída com sucesso! Saldo atualizado.');
-
-      // Atualizar a lista de últimas despesas
-      await _carregarUltimasDespesas();
-    } catch (e) {
-      _mostrarMensagem('Erro ao excluir a despesa. Tente novamente.',
-          erro: true);
-      print('Erro ao excluir despesa: $e');
-    }
-  }
-
-//********************Carregar Ultimas Despesas******************************** */
-  Future<void> _carregarUltimasDespesas() async {
-    var novasUltimasDespesas = await buscarUltimasDespesas();
-    if (mounted) {
-      setState(() {
-        ultimasDespesas = novasUltimasDespesas;
-      });
-    }
-  }
-
-// ****************Buscar  Ultimas Despesas *************************************
-
-  Future<List<Map<String, dynamic>>> buscarUltimasDespesas() async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-    DocumentSnapshot rastreamentoDoc =
-        await firestore.collection('rastreamentoDespesas').doc(userId).get();
-
-    if (!rastreamentoDoc.exists || rastreamentoDoc.data() == null) {
-      return [];
-    }
-
-    // Agora nós temos certeza que data() não é null, então podemos usar '!' para desembrulhar o valor
-    Map<String, dynamic> rastreamentoData =
-        rastreamentoDoc.data()! as Map<String, dynamic>;
-
-    List<Map<String, dynamic>> ultimasDespesas = [];
-    // Agora nós iteramos sobre as chaves do mapa, que correspondem aos nomes das coleções
-    for (String categoria in rastreamentoData.keys) {
-      var despesasIds = rastreamentoData[categoria];
-      if (despesasIds is List) {
-        // Verifica se o valor é uma lista
-        for (var despesaId in despesasIds) {
-          if (despesaId is String) {
-            // Verifica se o ID da despesa é uma String
-            DocumentSnapshot despesaDoc =
-                await firestore.collection(categoria).doc(despesaId).get();
-            if (despesaDoc.exists) {
-              Map<String, dynamic> despesa =
-                  despesaDoc.data() as Map<String, dynamic>;
-              despesa['id'] = despesaDoc.id; // Adicionando o ID do documento
-              despesa['categoria'] = categoria; // Adicionando a categoria
-              ultimasDespesas.add(despesa);
-            }
-          }
-        }
-      }
-    }
-
-    // Ordenar as despesas pela data, da mais recente para a mais antiga
-    ultimasDespesas.sort((a, b) {
-      Timestamp dataA = a['data'] as Timestamp;
-      Timestamp dataB = b['data'] as Timestamp;
-      return dataB.compareTo(dataA);
-    });
-
-    return ultimasDespesas;
-  }
-
-//**************************Data***************************************************** */
-//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  Future<String?> _selectDate(BuildContext context) async {
-    DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _dataSelecionada ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-
-    if (picked != null && picked != _dataSelecionada) {
-      setState(() {
-        _dataSelecionada = picked;
-        _controllerData.text = DateFormat('dd/MM/yyyy', 'pt_BR').format(picked);
-      });
-
-      return DateFormat('dd/MM/yyyy', 'pt_BR').format(picked);
-    }
-
-    return null; // Retorna null se nenhuma data for selecionada
-  }
-
-//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-//>>>>>>>>>>>>>>>>>>>> >>>Buscar sugestoes no Firebase >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  Future<List<String>> buscarSugestoes(String query) async {
-    print('Buscando sugestões para: $query');
-    print('Categoria selecionada Amigavel: $categoriaSelecionadaNomeAmigavel');
-    print('Categoria selecionada é: $categoriaSelecionadaNomeAmigavel');
-    if (query.isEmpty) {
-      return [];
-    }
-
-    // Certifique-se de que 'categoriaSelecionadaNomeAmigavel' não é null
-    if (categoriaSelecionadaNomeAmigavel == null) {
-      print('A categoria selecionada é null');
-      return [];
-    }
-
-    // Acesse o documento com base na categoria selecionada pelo usuário
-    DocumentSnapshot categoriaDoc = await FirebaseFirestore.instance
-        .collection('categorias')
-        .doc(categoriaSelecionada) // Use a variável correta aqui
-        .get();
-
-    if (!categoriaDoc.exists) {
-      print('O documento da categoria selecionada não existe');
-      return [];
-    }
-
-    Map<String, dynamic> campos = categoriaDoc.data() as Map<String, dynamic>;
-
-    List<String> sugestoes = campos.keys
-        .where((key) => key.toLowerCase().contains(query.toLowerCase()))
-        .toList();
-
-    return sugestoes;
-  }*/

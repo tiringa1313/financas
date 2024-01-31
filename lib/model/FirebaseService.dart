@@ -85,6 +85,24 @@ class FirebaseService implements FirebaseServiceBase {
     }
   }
 
+  Future<List<Map<String, dynamic>>> obterUltimasDespesas() async {
+    QuerySnapshot querySnapshot = await _collectionReference
+        .orderBy('data', descending: true)
+        .limit(4)
+        .get();
+
+    return querySnapshot.docs
+        .map((doc) => doc.data() as Map<String, dynamic>)
+        .toList();
+  }
+
+  Future<void> adicionarRastreamentoDespesa(
+      Map<String, dynamic> rastreamentoData) async {
+    await FirebaseFirestore.instance
+        .collection('rastreamentoDespesas')
+        .add(rastreamentoData);
+  }
+
   @override
   Future<void> deletarItem(String id) async {
     await _collectionReference.doc(id).delete();
