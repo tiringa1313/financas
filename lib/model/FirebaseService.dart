@@ -32,7 +32,7 @@ class FirebaseService implements FirebaseServiceBase {
     await _collectionReference.doc(id).update(item);
   }
 
-  Future<void> atualizarSaldo(String idUsuario, double novoSaldo,
+  Future<void> atualizarSaldo(String idUsuario, String novoSaldo,
       CollectionReference collectionReference) async {
     try {
       // Adicione um print para exibir a coleção
@@ -45,7 +45,7 @@ class FirebaseService implements FirebaseServiceBase {
         // O documento existe, então podemos atualizar o saldo
 
         await collectionReference.doc(idUsuario).update({
-          'saldoGeral': novoSaldo.toStringAsFixed(2),
+          'saldoGeral': novoSaldo,
         });
       } else {
         printInfo('Documento do usuário não encontrado', {});
@@ -73,9 +73,9 @@ class FirebaseService implements FirebaseServiceBase {
       // Obtenha o valor de 'saldoGeral' do documento do usuário como uma string
       Map<String, dynamic> usuarioData =
           usuarioDoc.data() as Map<String, dynamic>;
-      String saldoGeral = usuarioData['saldoGeral']?.toString() ?? '0.0';
+      String saldoGeral = usuarioData['saldoGeral']?.toString() ?? '0.00';
 
-      printInfo('Saldo Geral do Usuário', {'saldoGeral': saldoGeral});
+      //printInfo('Saldo Geral do Usuário', {'saldoGeral': saldoGeral});
 
       return saldoGeral;
     } catch (e) {
