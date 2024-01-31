@@ -214,6 +214,8 @@ class _DespesasState extends State<Despesas> {
 
       _controllerAutocomplete.clear();
 
+      // Atualizar a lista de despesas após salvar uma nova
+      await _carregarDespesas();
       // Exibir mensagem de dados salvos
       _mostrarMensagem('Despesa salva com sucesso!');
     } catch (e) {
