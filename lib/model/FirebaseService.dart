@@ -113,6 +113,7 @@ class FirebaseService implements FirebaseServiceBase {
 
   @override
   Future<void> deletarItem(String id) async {
+    await _collectionReference.doc(id).delete();
     try {
       DocumentReference docReferencia =
           FirebaseFirestore.instance.collection(currentCollection).doc(id);

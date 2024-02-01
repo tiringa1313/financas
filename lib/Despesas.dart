@@ -161,6 +161,21 @@ class _DespesasState extends State<Despesas> {
     }
   }
 
+  void excluirDespesaRastreamento(String documentId) async {
+    try {
+      // Criar uma instância do seu serviço Firebase
+      FirebaseService firebaseService = FirebaseService('rastreamentoDespesas');
+      await firebaseService.deletarItem(documentId);
+
+      // Atualizar a lista de despesas após excluir uma
+      await _carregarDespesas();
+      // Exibir mensagem de exclusão bem-sucedida
+      _mostrarMensagem('Despesa excluída com sucesso!');
+    } catch (e) {
+      print('Erro ao excluir a despesa do Firebase: $e');
+    }
+  }
+
   void OrganizaDadosParaSalvar() async {
     String? userId = AuthManager.userId;
     double? _valorDespesa;
@@ -564,6 +579,7 @@ class _DespesasState extends State<Despesas> {
                                   'ID da Despesa: $idDespesa'); // Adicione esta linha
 
                               excluirDespesa(idDespesa);
+                              excluirDespesaRastreamento(despesa['id']);
                             },
                           ),
                         ],
