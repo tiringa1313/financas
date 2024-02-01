@@ -225,13 +225,11 @@ class _DespesasState extends State<Despesas> {
         'valor': _valorDespesa,
         'data': DateTime.now(),
         'mes': DateFormat.MMMM('pt_BR').format(DateTime.now()),
-        'idDespesa': idDespesa, // Adicione o ID da despesa aqui
+        'idDespesa': idDespesa, // Usando o mesmo ID da despesa
       };
 
       // chama o metodo para salvar as informacoes de rastreamento de despesas
       await firebaseService.adicionarRastreamentoDespesa(rastreamentoData);
-
-      ;
 
       setState(() {
         _controllerValorDespesa.clear();
