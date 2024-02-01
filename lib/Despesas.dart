@@ -38,6 +38,7 @@ class _DespesasState extends State<Despesas> {
   int? _idUsuario;
   String? categoriaFrontEnd;
   String? categoriaSelecionada;
+  String? _categoriaExclusao;
   DateTime? _dataSelecionada = DateTime.now();
   String? _tipoDespesa;
   double? _valorDespesa;
@@ -101,9 +102,15 @@ class _DespesasState extends State<Despesas> {
   Future<void> _carregarDespesas() async {
     try {
       FirebaseService firebaseService = FirebaseService('rastreamentoDespesas');
+
+      // Obtém as últimas despesas da coleção 'rastreamentoDespesas'
       List<Map<String, dynamic>> despesas =
           await firebaseService.obterUltimasDespesas();
 
+      // Exibe a lista de despesas no console
+      print('Lista de Despesas: $despesas');
+
+      // Atualiza o estado da lista de despesas no widget
       setState(() {
         listUltimasDespesas = despesas;
       });
@@ -136,7 +143,23 @@ class _DespesasState extends State<Despesas> {
     }
   }
 
-  buscarUltimasDespesasSalvas() {}
+  void excluirDespesa(String documentId) async {
+    print('ID: $documentId');
+    print('categoria exclusao: $_categoriaExclusao');
+
+    try {
+      // Criar uma instância do seu serviço Firebase
+      FirebaseService firebaseService = FirebaseService(_categoriaExclusao!);
+      await firebaseService.deletarItem(documentId);
+
+      // Atualizar a lista de despesas após excluir uma
+      await _carregarDespesas();
+      // Exibir mensagem de exclusão bem-sucedida
+      _mostrarMensagem('Despesa excluída com sucesso!');
+    } catch (e) {
+      print('Erro ao excluir a despesa do Firebase: $e');
+    }
+  }
 
   void OrganizaDadosParaSalvar() async {
     String? userId = AuthManager.userId;
@@ -168,8 +191,8 @@ class _DespesasState extends State<Despesas> {
       _tipoDespesa!, // Substituído por _tipoDespesa ao invés de categoriaSelecionada
       _valorDespesa,
       _dataSelecionada!,
+      categoriaSelecionada,
     );
-
     try {
       // Criar uma instância do seu serviço Firebase
       FirebaseService firebaseService = FirebaseService(categoriaSelecionada!);
@@ -187,11 +210,14 @@ class _DespesasState extends State<Despesas> {
       // Converter o objeto DespesasObj para um mapa
       Map<String, dynamic> despesaMap = despesa.toMap();
 
-      // Adicionar o item ao Firestore
-      await firebaseService.adicionarItem(despesaMap);
+      // Adicionar o item ao Firestore e obter o DocumentReference
+      DocumentReference despesaRef =
+          await firebaseService.adicionarItem(despesaMap);
 
-      //Adicionar o item na lista de rastreamento para listar as ultimas transacoes
+      // Obter o ID da despesa a partir do DocumentReference
+      String idDespesa = despesaRef.id;
 
+      // Adicionar o item na lista de rastreamento para listar as ultimas transacoes
       Map<String, dynamic> rastreamentoData = {
         'idUsuario': userId,
         'tipo': categoriaSelecionada,
@@ -199,10 +225,13 @@ class _DespesasState extends State<Despesas> {
         'valor': _valorDespesa,
         'data': DateTime.now(),
         'mes': DateFormat.MMMM('pt_BR').format(DateTime.now()),
+        'idDespesa': idDespesa, // Adicione o ID da despesa aqui
       };
 
       // chama o metodo para salvar as informacoes de rastreamento de despesas
       await firebaseService.adicionarRastreamentoDespesa(rastreamentoData);
+
+      ;
 
       setState(() {
         _controllerValorDespesa.clear();
@@ -499,11 +528,14 @@ class _DespesasState extends State<Despesas> {
 
               // ********** */ Lista deverá ser implementada aqui ****************************/
               Container(
-                height: 200, // Adapte a altura conforme necessário
+                height: 200,
                 child: ListView.builder(
                   itemCount: listUltimasDespesas.length,
                   itemBuilder: (context, index) {
                     final despesa = listUltimasDespesas[index];
+                    final idDespesa =
+                        despesa['idDespesa']; // Adicione esta linha
+
                     return ListTile(
                       title: Text(despesa['subcategorias'] ?? 'Sem tipo'),
                       subtitle: Text(
@@ -527,7 +559,13 @@ class _DespesasState extends State<Despesas> {
                               color: Colors.red,
                             ),
                             onPressed: () {
-                              // Implemente a lógica de exclusão se necessário
+                              _categoriaExclusao = despesa['tipo'];
+
+                              print('Categoria: $_categoriaExclusao');
+                              print(
+                                  'ID da Despesa: $idDespesa'); // Adicione esta linha
+
+                              excluirDespesa(idDespesa);
                             },
                           ),
                         ],
@@ -539,6 +577,7 @@ class _DespesasState extends State<Despesas> {
                   },
                 ),
               ),
+
 //***********/ FIM DO LISTVIEW ********************************************** */
             ],
           ),

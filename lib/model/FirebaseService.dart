@@ -9,22 +9,27 @@ class FirebaseService implements FirebaseServiceBase {
         FirebaseFirestore.instance.collection(collectionName);
   }
 
+  // Adicione essa propriedade
+  String get currentCollection => _collectionReference.id;
+
   CollectionReference getUsuariosCollectionReference() {
     // Retorna a colecao de usuarios
     return FirebaseFirestore.instance.collection('usuarios');
   }
 
   @override
-  Future<void> adicionarItem(Map<String, dynamic> item) async {
-    await _collectionReference.add(item);
+  Future<DocumentReference> adicionarItem(Map<String, dynamic> item) async {
+    return await _collectionReference.add(item);
   }
 
   @override
   Future<List<Map<String, dynamic>>> obterTodosItens() async {
     QuerySnapshot querySnapshot = await _collectionReference.get();
-    return querySnapshot.docs
-        .map((doc) => doc.data() as Map<String, dynamic>)
-        .toList();
+    return querySnapshot.docs.map((doc) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      data['id'] = doc.id; // Adiciona o ID ao mapa
+      return data;
+    }).toList();
   }
 
   @override
@@ -85,15 +90,18 @@ class FirebaseService implements FirebaseServiceBase {
     }
   }
 
+// Este método retorna uma lista de Mapas contendo as últimas 4 despesas ordenadas por data de forma descendente.
   Future<List<Map<String, dynamic>>> obterUltimasDespesas() async {
     QuerySnapshot querySnapshot = await _collectionReference
         .orderBy('data', descending: true)
         .limit(4)
         .get();
 
-    return querySnapshot.docs
-        .map((doc) => doc.data() as Map<String, dynamic>)
-        .toList();
+    return querySnapshot.docs.map((doc) {
+      Map<String, dynamic> despesaData = doc.data() as Map<String, dynamic>;
+      despesaData['id'] = doc.id; // Adiciona o ID do documento ao mapa
+      return despesaData;
+    }).toList();
   }
 
   Future<void> adicionarRastreamentoDespesa(
@@ -105,7 +113,25 @@ class FirebaseService implements FirebaseServiceBase {
 
   @override
   Future<void> deletarItem(String id) async {
-    await _collectionReference.doc(id).delete();
+    try {
+      DocumentReference docReferencia =
+          FirebaseFirestore.instance.collection(currentCollection).doc(id);
+
+      print('Id FirebaseService: $id');
+      print('Collecao: $currentCollection');
+
+      // Verifica se o documento existe antes de tentar deletar
+      DocumentSnapshot documentSnapshot = await docReferencia.get();
+
+      if (documentSnapshot.exists) {
+        await docReferencia.delete();
+      } else {
+        printInfo('Documento não encontrado na coleção', {});
+      }
+    } catch (e) {
+      printInfo('Erro ao excluir item: $e', {});
+      throw e;
+    }
   }
 
   Future<List<String>> buscarSubcategorias(String subcategoria) async {

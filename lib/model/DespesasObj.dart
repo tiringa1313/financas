@@ -4,12 +4,16 @@ class DespesasObj {
   late int _id;
   late String _idUsuario;
   late String _tipoDespesa;
-  late double _valorDespesa; // Alterado para double
-  late DateTime _dataDespesa; // Alterado para DateTime
+  late String _categoriaSelecionada;
+  late double _valorDespesa;
+  late DateTime _dataDespesa;
 
   // Construtor padrão
   DespesasObj(this._idUsuario, this._tipoDespesa, this._valorDespesa,
-      this._dataDespesa);
+      this._dataDespesa, String? categoriaSelecionada) {
+    _categoriaSelecionada =
+        categoriaSelecionada ?? ""; // Inicialização padrão para evitar nulo
+  }
 
   // Construtor nomeado para criar uma instância da classe a partir de um mapa
   Map<String, dynamic> toMap() {
@@ -18,6 +22,7 @@ class DespesasObj {
       'tipoDespesa': _tipoDespesa,
       'valorDespesa': _valorDespesa,
       'dataDespesa': _dataDespesa,
+      'categoriaSelecionada': _categoriaSelecionada,
     };
   }
 
@@ -45,4 +50,9 @@ class DespesasObj {
   get dataReceita => this._dataDespesa;
 
   set dataReceita(value) => this._dataDespesa = value;
+
+  // Getter e Setter para categoriaSelecionada
+  get categoriaSelecionada => this._categoriaSelecionada;
+
+  set categoriaSelecionada(value) => this._categoriaSelecionada = value;
 }
