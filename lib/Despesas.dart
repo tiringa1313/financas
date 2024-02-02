@@ -176,6 +176,8 @@ class _DespesasState extends State<Despesas> {
     }
   }
 
+  void editarDespesas() async {}
+
   void OrganizaDadosParaSalvar() async {
     String? userId = AuthManager.userId;
     double? _valorDespesa;
