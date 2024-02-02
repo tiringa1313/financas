@@ -35,13 +35,11 @@ class _DespesasState extends State<Despesas> {
 
 //Todas as variaveis aqui      *************************************************
 
-  int? _idUsuario;
   String? categoriaFrontEnd;
   String? categoriaSelecionada;
   String? _categoriaExclusao;
   DateTime? _dataSelecionada = DateTime.now();
   String? _tipoDespesa;
-  double? _valorDespesa;
   double? _saldoGeral;
 
 //Todos os metodos deverao ser implementados aqui ******************************
@@ -143,17 +141,39 @@ class _DespesasState extends State<Despesas> {
     }
   }
 
-  void excluirDespesa(String documentId) async {
-    print('ID: $documentId');
-    print('categoria exclusao: $_categoriaExclusao');
+  void excluirDespesa(Map<String, dynamic> despesa) async {
+    String idUsuario = despesa['idUsuario'];
+    double novoSaldoGeral = 0.00;
 
     try {
       // Criar uma instância do seu serviço Firebase
       FirebaseService firebaseService = FirebaseService(_categoriaExclusao!);
-      await firebaseService.deletarItem(documentId);
+
+      // Buscar o saldo geral atual do usuário no Firebase
+      String saldoGeralString =
+          await firebaseService.buscarSaldoGeralUsuario(idUsuario);
+
+      // Converter o saldoGeralString para double
+      double saldoGeral = double.parse(saldoGeralString);
+
+      // Converter o valor da despesa String para Double
+      double valorDespesa = double.parse(despesa['valor'].toString());
+
+      // Calcular o novo saldo geral
+      novoSaldoGeral = saldoGeral + valorDespesa;
+
+      // Atualizar o saldo geral no Firestore (convertendo para String)
+      await firebaseService.atualizarSaldo(
+          idUsuario,
+          novoSaldoGeral.toString(), // Convertendo para String
+          firebaseService.getUsuariosCollectionReference());
+
+      // Deletar a despesa
+      await firebaseService.deletarItem(despesa['idDespesa']);
 
       // Atualizar a lista de despesas após excluir uma
       await _carregarDespesas();
+
       // Exibir mensagem de exclusão bem-sucedida
       _mostrarMensagem('Despesa excluída com sucesso!');
     } catch (e) {
@@ -161,11 +181,11 @@ class _DespesasState extends State<Despesas> {
     }
   }
 
-  void excluirDespesaRastreamento(String documentId) async {
+  void excluirDespesaRastreamento(Map<String, dynamic> despesa) async {
     try {
       // Criar uma instância do seu serviço Firebase
       FirebaseService firebaseService = FirebaseService('rastreamentoDespesas');
-      await firebaseService.deletarItem(documentId);
+      await firebaseService.deletarItem(despesa['id']);
 
       // Atualizar a lista de despesas após excluir uma
       await _carregarDespesas();
@@ -176,7 +196,22 @@ class _DespesasState extends State<Despesas> {
     }
   }
 
-  void editarDespesas() async {}
+  void editarDespesas(String idDespesa, String idUsuario,
+      String tipoDespesaExclusao, String idRastreamento) async {
+    if (categoriaSelecionada == tipoDespesaExclusao) {
+    } else {}
+  }
+
+  void _carregarDadosParaEdicao(Map<String, dynamic> despesa) {
+    setState(() {
+      _controllerValorDespesa.text = despesa['valor'];
+      categoriaSelecionada = despesa['tipo'];
+      _controllerAutocomplete.text = despesa['subcategorias'];
+
+      _controllerData.text = DateFormat('dd/MM/yyyy', 'pt_BR').format(
+          (despesa['data'] as Timestamp).toDate()); // Carregar data da receita
+    });
+  }
 
   void OrganizaDadosParaSalvar() async {
     String? userId = AuthManager.userId;
@@ -565,7 +600,10 @@ class _DespesasState extends State<Despesas> {
                               color: Color.fromARGB(255, 30, 167, 18),
                             ),
                             onPressed: () {
-                              // Implemente a lógica de edição se necessário
+                              //_carregarDadosParaEdicao(despesa);
+
+                              /* editarDespesas(idDespesa, idUsuario, tipoDespesa,
+                                  idRastreamento);*/
                             },
                           ),
                           IconButton(
@@ -576,12 +614,8 @@ class _DespesasState extends State<Despesas> {
                             onPressed: () {
                               _categoriaExclusao = despesa['tipo'];
 
-                              print('Categoria: $_categoriaExclusao');
-                              print(
-                                  'ID da Despesa: $idDespesa'); // Adicione esta linha
-
-                              excluirDespesa(idDespesa);
-                              excluirDespesaRastreamento(despesa['id']);
+                              excluirDespesa(despesa);
+                              excluirDespesaRastreamento(despesa);
                             },
                           ),
                         ],
