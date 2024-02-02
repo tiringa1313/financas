@@ -41,6 +41,8 @@ class _DespesasState extends State<Despesas> {
   DateTime? _dataSelecionada = DateTime.now();
   String? _tipoDespesa;
   double? _saldoGeral;
+  bool estaEditando = false;
+  Map<String, dynamic> despesaEmEdicao = {};
 
 //Todos os metodos deverao ser implementados aqui ******************************
 
@@ -196,21 +198,51 @@ class _DespesasState extends State<Despesas> {
     }
   }
 
-  void editarDespesas(String idDespesa, String idUsuario,
-      String tipoDespesaExclusao, String idRastreamento) async {
-    if (categoriaSelecionada == tipoDespesaExclusao) {
-    } else {}
-  }
-
   void _carregarDadosParaEdicao(Map<String, dynamic> despesa) {
     setState(() {
-      _controllerValorDespesa.text = despesa['valor'];
+      // Configurar os valores nos campos de edição
+      _controllerValorDespesa.text = despesa['valor'].toString();
+      categoriaFrontEnd = categoriasMapa.entries
+          .singleWhere((entry) => entry.value == despesa['tipo'])
+          .key;
       categoriaSelecionada = despesa['tipo'];
-      _controllerAutocomplete.text = despesa['subcategorias'];
+      _controllerAutocomplete.text = despesa['subcategorias'] ?? '';
+      _dataSelecionada = (despesa['data'] as Timestamp).toDate();
+      _controllerData.text =
+          DateFormat('dd/MM/yyyy', 'pt_BR').format(_dataSelecionada!);
 
-      _controllerData.text = DateFormat('dd/MM/yyyy', 'pt_BR').format(
-          (despesa['data'] as Timestamp).toDate()); // Carregar data da receita
+      // Configurar a variável despesaEmEdicao
+      despesaEmEdicao = despesa;
+
+      // Indicar que está editando
+      estaEditando = true;
     });
+  }
+
+  void _editarDespesa(Map<String, dynamic> despesa) async {
+    try {
+      // Criar uma instância do seu serviço Firebase
+      FirebaseService firebaseService = FirebaseService(despesa['tipo']);
+
+      // Converter o valor da despesa String para Double
+      double valorDespesa = double.parse(_controllerValorDespesa.text);
+
+      // Atualizar os campos da despesa com os novos valores
+      despesa['valor'] = valorDespesa;
+      despesa['subcategorias'] = _tipoDespesa;
+      despesa['data'] = Timestamp.fromDate(_dataSelecionada!);
+
+      // Atualizar a despesa no Firestore
+      await firebaseService.atualizarItem(despesa['idDespesa'], despesa);
+
+      // Atualizar a lista de despesas após editar uma
+      await _carregarDespesas();
+
+      // Exibir mensagem de edição bem-sucedida
+      _mostrarMensagem('Despesa editada com sucesso!');
+    } catch (e) {
+      print('Erro ao editar a despesa no Firebase: $e');
+    }
   }
 
   void OrganizaDadosParaSalvar() async {
@@ -275,8 +307,8 @@ class _DespesasState extends State<Despesas> {
         'tipo': categoriaSelecionada,
         'subcategorias': _tipoDespesa,
         'valor': _valorDespesa,
-        'data': DateTime.now(),
-        'mes': DateFormat.MMMM('pt_BR').format(DateTime.now()),
+        'data': _dataSelecionada!,
+        'mes': DateFormat.MMMM('pt_BR').format(_dataSelecionada!),
         'idDespesa': idDespesa, // Usando o mesmo ID da despesa
       };
 
@@ -600,10 +632,7 @@ class _DespesasState extends State<Despesas> {
                               color: Color.fromARGB(255, 30, 167, 18),
                             ),
                             onPressed: () {
-                              //_carregarDadosParaEdicao(despesa);
-
-                              /* editarDespesas(idDespesa, idUsuario, tipoDespesa,
-                                  idRastreamento);*/
+                              _carregarDadosParaEdicao(despesa);
                             },
                           ),
                           IconButton(
@@ -644,7 +673,13 @@ class _DespesasState extends State<Despesas> {
         ),
         backgroundColor: Color.fromARGB(255, 248, 76, 76),
         onPressed: () {
-          OrganizaDadosParaSalvar();
+          if (estaEditando) {
+            // Edição
+            _editarDespesa(despesaEmEdicao);
+          } else {
+            // Nova despesa
+            OrganizaDadosParaSalvar();
+          }
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
