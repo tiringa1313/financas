@@ -108,7 +108,7 @@ class _DespesasState extends State<Despesas> {
           await firebaseService.obterUltimasDespesas();
 
       // Exibe a lista de despesas no console
-      print('Lista de Despesas: $despesas');
+      //print('Lista de Despesas: $despesas');
 
       // Atualiza o estado da lista de despesas no widget
       setState(() {
@@ -222,6 +222,11 @@ class _DespesasState extends State<Despesas> {
   void _editarDespesa(Map<String, dynamic> despesa) async {
     String? userId = AuthManager.userId;
     String? idDespesa = despesa['idDespesa'];
+    String? idDespesaRastreamento = despesa['id'];
+    double? saldoGeralAtualizado;
+    double? valorDespesaDouble;
+
+    //Verifica se a categoria nao mudou e realiza o Update
     if (categoriaSelecionada == _categoriaExclusao) {
       double? valorDespesaEdicao =
           double.tryParse(_controllerValorDespesa.text);
@@ -236,6 +241,26 @@ class _DespesasState extends State<Despesas> {
         _categoriaExclusao,
       );
 
+      // Adicionar o item na lista de rastreamento para listar as ultimas transacoes
+      Map<String, dynamic> rastreamentoEdicao = {
+        'idUsuario': userId,
+        'tipo': _categoriaExclusao,
+        'subcategorias': tipoDespesaEdicao,
+        'valor': valorDespesaEdicao,
+        'data': _dataSelecionada!,
+        'mes': DateFormat.MMMM('pt_BR').format(_dataSelecionada!),
+        'idDespesa': idDespesa, // Usando o mesmo ID da despesa
+      };
+
+      valorDespesaDouble = double.parse(valorDespesaEdicao.toString());
+
+      _saldoGeral = _saldoGeral! + despesa['valor'];
+      saldoGeralAtualizado = _saldoGeral! - valorDespesaEdicao;
+
+      String saldoFormatado = saldoGeralAtualizado.toStringAsFixed(2);
+
+      print('valor apos somar $saldoFormatado');
+
       try {
         // Criar uma instância do seu serviço Firebase
         FirebaseService firebaseService = FirebaseService(_categoriaExclusao!);
@@ -243,13 +268,39 @@ class _DespesasState extends State<Despesas> {
         Map<String, dynamic> despesaMap = despesaEdicao.toMap();
 
         firebaseService.atualizarItem(idDespesa!, despesaMap);
-      } catch (e) {}
+        firebaseService.atualizarSaldo(userId, saldoFormatado,
+            firebaseService.getUsuariosCollectionReference());
 
-      print('Categoria Edicao: $_categoriaExclusao');
-      print('Valor Despesa: $valorDespesaEdicao');
-      print('Tipo Despesa: $tipoDespesaEdicao');
-      print('Data Despesa: $_dataSelecionadaEdicao');
+        editarDadosRastreamento(idDespesaRastreamento!, rastreamentoEdicao);
+
+        setState(() {
+          _controllerValorDespesa.clear();
+          _tipoDespesa = null;
+          _dataSelecionada = DateTime.now();
+          categoriaFrontEnd = null;
+          categoriaSelecionada = null;
+        });
+
+        _controllerAutocomplete.clear();
+        // Se a categoria for diferente, devera excluir a despesa anterior e
+        // salvar  a nova despesa com base nas alterações
+      } catch (e) {}
     } else {}
+  }
+
+  void editarDadosRastreamento(
+      String idRastreamento, Map<String, dynamic> despesasRastreamento) async {
+    try {
+      FirebaseService firebaseService = FirebaseService('rastreamentoDespesas');
+      firebaseService.atualizarRastreamentoDespesa(
+          idRastreamento, despesasRastreamento);
+
+      // Atualizar a lista de despesas após salvar uma nova
+      await _carregarDespesas();
+    } catch (e) {
+      print('Erro ao editar dados de rastreamento: $e');
+      // Adicione aqui qualquer outra lógica de tratamento de erro desejada.
+    }
   }
 
   void OrganizaDadosParaSalvar() async {

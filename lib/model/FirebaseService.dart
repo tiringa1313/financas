@@ -111,6 +111,15 @@ class FirebaseService implements FirebaseServiceBase {
         .add(rastreamentoData);
   }
 
+  Future<void> atualizarRastreamentoDespesa(
+      String idRastreamento, Map<String, dynamic> rastreamentoData) async {
+    await FirebaseFirestore.instance
+        .collection(
+            'rastreamentoDespesas') // Substitua 'suaColecao' pelo nome real da coleção
+        .doc(idRastreamento)
+        .update(rastreamentoData);
+  }
+
   @override
   Future<void> deletarItem(String id) async {
     await _collectionReference.doc(id).delete();
