@@ -40,7 +40,7 @@ class _DespesasState extends State<Despesas> {
 
   String? categoriaFrontEnd;
   String? categoriaSelecionada;
-  String? _categoriaExclusao;
+  String? _categoriaEdicao;
   DateTime? _dataSelecionada = DateTime.now();
   String? _tipoDespesa;
   double? _saldoGeral;
@@ -153,7 +153,7 @@ class _DespesasState extends State<Despesas> {
 
     try {
       // Criar uma instância do seu serviço Firebase
-      FirebaseService firebaseService = FirebaseService(_categoriaExclusao!);
+      FirebaseService firebaseService = FirebaseService(_categoriaEdicao!);
 
       // Buscar o saldo geral atual do usuário no Firebase
       String saldoGeralString =
@@ -224,74 +224,159 @@ class _DespesasState extends State<Despesas> {
   }
 
   void _editarDespesa(Map<String, dynamic> despesa) async {
-    String? userId = AuthManager.userId;
-    String? idDespesa = despesa['idDespesa'];
-    String? idDespesaRastreamento = despesa['id'];
-    double? saldoGeralAtualizado = 0.00;
-    double? valorDespesaDouble;
+    try {
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        String? userId = AuthManager.userId;
+        String? idDespesa = despesa['idDespesa'];
+        String? idDespesaRastreamento = despesa['id'];
+        String? categoriaAnterior = despesa['tipo'];
+        double? saldoGeralAtualizado = 0.00;
+        double? valorDespesaDouble;
 
-    //Verifica se a categoria nao mudou e realiza o Update
-    if (categoriaSelecionada == _categoriaExclusao) {
-      double? valorDespesaEdicao =
-          double.tryParse(_controllerValorDespesa.text);
-      String? tipoDespesaEdicao = _controllerAutocomplete.text;
-      DateTime? _dataSelecionadaEdicao = _dataSelecionada;
+        double? valorDespesaEdicao =
+            double.tryParse(_controllerValorDespesa.text);
+        String? tipoDespesaEdicao = _controllerAutocomplete.text;
+        DateTime? _dataSelecionadaEdicao = _dataSelecionada;
 
-      DespesasObj despesaEdicao = DespesasObj(
-        userId!,
-        tipoDespesaEdicao, // Substituído por _tipoDespesa ao invés de categoriaSelecionada
-        valorDespesaEdicao!,
-        _dataSelecionadaEdicao!,
-        _categoriaExclusao,
-      );
+        if (categoriaSelecionada == _categoriaEdicao) {
+          DespesasObj despesaEdicao = DespesasObj(
+            userId!,
+            tipoDespesaEdicao,
+            valorDespesaEdicao!,
+            _dataSelecionadaEdicao!,
+            _categoriaEdicao,
+          );
 
-      // Adicionar o item na lista de rastreamento para listar as ultimas transacoes
-      Map<String, dynamic> rastreamentoEdicao = {
-        'idUsuario': userId,
-        'tipo': _categoriaExclusao,
-        'subcategorias': tipoDespesaEdicao,
-        'valor': valorDespesaEdicao,
-        'data': _dataSelecionada!,
-        'mes': DateFormat.MMMM('pt_BR').format(_dataSelecionada!),
-        'idDespesa': idDespesa, // Usando o mesmo ID da despesa
-      };
+          Map<String, dynamic> rastreamentoEdicao = {
+            'idUsuario': userId,
+            'tipo': _categoriaEdicao,
+            'subcategorias': tipoDespesaEdicao,
+            'valor': valorDespesaEdicao,
+            'data': _dataSelecionada!,
+            'mes': DateFormat.MMMM('pt_BR').format(_dataSelecionada!),
+            'idDespesa': idDespesa,
+          };
 
-      valorDespesaDouble = double.parse(valorDespesaEdicao.toString());
-      double despesaAnterior = double.parse(despesa['valor'].toString());
+          valorDespesaDouble = double.parse(valorDespesaEdicao.toString());
+          double despesaAnterior = double.parse(despesa['valor'].toString());
 
-      _saldoGeral = _saldoGeral! + despesaAnterior;
-      saldoGeralAtualizado = _saldoGeral! - valorDespesaDouble;
+          _saldoGeral = _saldoGeral! + despesaAnterior;
+          saldoGeralAtualizado = _saldoGeral! - valorDespesaDouble;
 
-      String saldoFormatado = saldoGeralAtualizado.toStringAsFixed(2);
+          String saldoFormatado = saldoGeralAtualizado.toStringAsFixed(2);
 
-      print('valor apos somar $saldoFormatado');
+          try {
+            FirebaseService firebaseService =
+                FirebaseService(_categoriaEdicao!);
 
-      try {
-        // Criar uma instância do seu serviço Firebase
-        FirebaseService firebaseService = FirebaseService(_categoriaExclusao!);
+            Map<String, dynamic> despesaMap = despesaEdicao.toMap();
 
-        Map<String, dynamic> despesaMap = despesaEdicao.toMap();
+            await firebaseService.atualizarItem(idDespesa!, despesaMap);
+            await firebaseService.atualizarSaldo(userId, saldoFormatado,
+                firebaseService.getUsuariosCollectionReference());
 
-        await firebaseService.atualizarItem(idDespesa!, despesaMap);
-        await firebaseService.atualizarSaldo(userId, saldoFormatado,
-            firebaseService.getUsuariosCollectionReference());
+            editarDadosRastreamento(idDespesaRastreamento!, rastreamentoEdicao);
+            estaEditando = false;
+            setState(() {
+              _controllerValorDespesa.clear();
+              _tipoDespesa = null;
+              _dataSelecionada = DateTime.now();
+              categoriaFrontEnd = null;
+              categoriaSelecionada = null;
+            });
 
-        editarDadosRastreamento(idDespesaRastreamento!, rastreamentoEdicao);
-        estaEditando = false;
-        setState(() {
-          _controllerValorDespesa.clear();
-          _tipoDespesa = null;
-          _dataSelecionada = DateTime.now();
-          categoriaFrontEnd = null;
-          categoriaSelecionada = null;
-        });
+            _controllerAutocomplete.clear();
 
-        _controllerAutocomplete.clear();
+            await _carregarDespesas();
+          } catch (e) {
+            // Tratar exceção, se necessário
+          }
+        } else {
+          //se categoria for diferente
 
-        // Se a categoria for diferente, devera excluir a despesa anterior e
-        // salvar  a nova despesa com base nas alterações
-      } catch (e) {}
-    } else {}
+          valorDespesaDouble = double.parse(valorDespesaEdicao.toString());
+          double despesaAnterior = double.parse(despesa['valor'].toString());
+
+          saldoGeralAtualizado = _saldoGeral! + despesaAnterior;
+          String saldoFormatado = saldoGeralAtualizado.toStringAsFixed(2);
+
+          DespesasObj despesaEdicao = DespesasObj(
+            userId!,
+            tipoDespesaEdicao,
+            valorDespesaEdicao!,
+            _dataSelecionadaEdicao!,
+            categoriaSelecionada,
+          );
+
+          try {
+            FirebaseService firebaseServiceAnterior =
+                FirebaseService(categoriaAnterior!);
+
+            // Atualiza o saldo Geral
+            await firebaseServiceAnterior.atualizarSaldo(
+              userId,
+              saldoFormatado,
+              firebaseServiceAnterior.getUsuariosCollectionReference(),
+            );
+
+            // Deleta a despesa antiga
+            await firebaseServiceAnterior.deletarItem(idDespesa!);
+
+            // Adiciona a nova despesa na nova categoria
+            FirebaseService firebaseServiceNova =
+                FirebaseService(categoriaSelecionada!);
+
+            // Converter o objeto DespesasObj para um mapa
+            Map<String, dynamic> despesaMap = despesaEdicao.toMap();
+
+            // Adicionar o item ao Firestore e obter o DocumentReference
+            DocumentReference despesaRef =
+                await firebaseServiceNova.adicionarItem(despesaMap);
+
+            // Obter o ID da nova despesa a partir do DocumentReference
+            idDespesa = despesaRef.id;
+
+            // Exclui a despesa antiga do Rastreamento
+
+            FirebaseService firebaseService =
+                FirebaseService('rastreamentoDespesas');
+            await firebaseService.deletarItem(despesa['id']);
+
+            // Adicionar o item na lista de rastreamento para listar as últimas transações
+            Map<String, dynamic> rastreamentoNovaDespesa = {
+              'idUsuario': userId,
+              'tipo': categoriaSelecionada,
+              'subcategorias': tipoDespesaEdicao,
+              'valor': valorDespesaEdicao,
+              'data': _dataSelecionada!,
+              'mes': DateFormat.MMMM('pt_BR').format(_dataSelecionada!),
+              'idDespesa': idDespesa,
+            };
+
+            // Chamar o método para salvar as informações de rastreamento de despesas
+            await firebaseServiceNova
+                .adicionarRastreamentoDespesa(rastreamentoNovaDespesa);
+
+            // Limpar os campos e carregar as despesas
+            setState(() {
+              _controllerValorDespesa.clear();
+              _tipoDespesa = null;
+              _dataSelecionada = DateTime.now();
+              categoriaFrontEnd = null;
+              categoriaSelecionada = null;
+            });
+            _controllerAutocomplete.clear();
+
+            await _carregarDespesas();
+          } catch (e) {
+            // Tratar exceção, se necessário
+          }
+        }
+      });
+    } catch (e) {
+      // Tratar exceção, se necessário
+      print('Erro durante a transação: $e');
+    }
   }
 
   void editarDadosRastreamento(
@@ -397,7 +482,7 @@ class _DespesasState extends State<Despesas> {
         // Atualizar a lista de despesas após salvar uma nova
         await _carregarDespesas();
         // Exibir mensagem de dados salvos
-        _mostrarMensagem('Despesa salva com sucesso!');
+        _mostrarMensagem('Despesa editada com sucesso!');
       } catch (e) {
         print('Erro ao salvar os dados no Firebase: $e');
       }
@@ -702,7 +787,7 @@ class _DespesasState extends State<Despesas> {
                               color: Color.fromARGB(255, 30, 167, 18),
                             ),
                             onPressed: () {
-                              _categoriaExclusao = despesa['tipo'];
+                              _categoriaEdicao = despesa['tipo'];
                               estaEditando = true;
                               despesaEmEdicao = despesa;
                               _carregarDadosParaEdicao(despesa);
