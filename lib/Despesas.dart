@@ -298,6 +298,8 @@ class _DespesasState extends State<Despesas> {
           double despesaAnterior = double.parse(despesa['valor'].toString());
 
           saldoGeralAtualizado = _saldoGeral! + despesaAnterior;
+          saldoGeralAtualizado = saldoGeralAtualizado - valorDespesaDouble;
+
           String saldoFormatado = saldoGeralAtualizado.toStringAsFixed(2);
 
           DespesasObj despesaEdicao = DespesasObj(
