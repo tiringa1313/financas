@@ -30,6 +30,9 @@ class _DespesasState extends State<Despesas> {
       TextEditingController(); // recebe a data selecionada no  picker
 
   TextEditingController _controllerAutocomplete = TextEditingController();
+  final TextEditingController _seuCampoDeTextoController =
+      TextEditingController();
+  final FocusNode _seuCampoDeTextoFocus = FocusNode();
 
   List<Map<String, dynamic>> listUltimasDespesas = [];
 
@@ -113,6 +116,7 @@ class _DespesasState extends State<Despesas> {
       // Atualiza o estado da lista de despesas no widget
       setState(() {
         listUltimasDespesas = despesas;
+        buscarSaldoGeral(); // linha importante
       });
     } catch (e) {
       print('Erro ao carregar despesas: $e');
@@ -223,7 +227,7 @@ class _DespesasState extends State<Despesas> {
     String? userId = AuthManager.userId;
     String? idDespesa = despesa['idDespesa'];
     String? idDespesaRastreamento = despesa['id'];
-    double? saldoGeralAtualizado;
+    double? saldoGeralAtualizado = 0.00;
     double? valorDespesaDouble;
 
     //Verifica se a categoria nao mudou e realiza o Update
@@ -253,9 +257,10 @@ class _DespesasState extends State<Despesas> {
       };
 
       valorDespesaDouble = double.parse(valorDespesaEdicao.toString());
+      double despesaAnterior = double.parse(despesa['valor'].toString());
 
-      _saldoGeral = _saldoGeral! + despesa['valor'];
-      saldoGeralAtualizado = _saldoGeral! - valorDespesaEdicao;
+      _saldoGeral = _saldoGeral! + despesaAnterior;
+      saldoGeralAtualizado = _saldoGeral! - valorDespesaDouble;
 
       String saldoFormatado = saldoGeralAtualizado.toStringAsFixed(2);
 
@@ -267,12 +272,12 @@ class _DespesasState extends State<Despesas> {
 
         Map<String, dynamic> despesaMap = despesaEdicao.toMap();
 
-        firebaseService.atualizarItem(idDespesa!, despesaMap);
-        firebaseService.atualizarSaldo(userId, saldoFormatado,
+        await firebaseService.atualizarItem(idDespesa!, despesaMap);
+        await firebaseService.atualizarSaldo(userId, saldoFormatado,
             firebaseService.getUsuariosCollectionReference());
 
         editarDadosRastreamento(idDespesaRastreamento!, rastreamentoEdicao);
-
+        estaEditando = false;
         setState(() {
           _controllerValorDespesa.clear();
           _tipoDespesa = null;
@@ -282,6 +287,7 @@ class _DespesasState extends State<Despesas> {
         });
 
         _controllerAutocomplete.clear();
+
         // Se a categoria for diferente, devera excluir a despesa anterior e
         // salvar  a nova despesa com base nas alterações
       } catch (e) {}
@@ -292,7 +298,7 @@ class _DespesasState extends State<Despesas> {
       String idRastreamento, Map<String, dynamic> despesasRastreamento) async {
     try {
       FirebaseService firebaseService = FirebaseService('rastreamentoDespesas');
-      firebaseService.atualizarRastreamentoDespesa(
+      await firebaseService.atualizarRastreamentoDespesa(
           idRastreamento, despesasRastreamento);
 
       // Atualizar a lista de despesas após salvar uma nova
@@ -305,11 +311,14 @@ class _DespesasState extends State<Despesas> {
 
   void OrganizaDadosParaSalvar() async {
     if (estaEditando) {
+      buscarSaldoGeral();
       _editarDespesa(despesaEmEdicao);
     } else {
-      print('Voce esta salvando uma despesa');
+      buscarSaldoGeral();
+
       String? userId = AuthManager.userId;
       double? _valorDespesa;
+      double? novoSaldo = 0.00;
 
       if (_controllerValorDespesa.text.isEmpty) {
         _mostrarMensagem('Informe um valor válido!!', erro: true);
@@ -345,13 +354,11 @@ class _DespesasState extends State<Despesas> {
             FirebaseService(categoriaSelecionada!);
 
         // Subtrai o valor da despesa ao valor do saldo geral
-        double novoSaldo = _saldoGeral! - _valorDespesa;
+        novoSaldo = _saldoGeral! - _valorDespesa;
         String saldoFormatado = novoSaldo.toStringAsFixed(2);
 
-        print('Saldo Geral apos realizar a soma: $novoSaldo');
-
         // chama o metodo para atualizar o saldo geral do usuario
-        firebaseService.atualizarSaldo(userId, saldoFormatado,
+        await firebaseService.atualizarSaldo(userId, saldoFormatado,
             firebaseService.getUsuariosCollectionReference());
 
         // Converter o objeto DespesasObj para um mapa
@@ -385,7 +392,6 @@ class _DespesasState extends State<Despesas> {
           categoriaFrontEnd = null;
           categoriaSelecionada = null;
         });
-
         _controllerAutocomplete.clear();
 
         // Atualizar a lista de despesas após salvar uma nova
@@ -739,6 +745,8 @@ class _DespesasState extends State<Despesas> {
         backgroundColor: Color.fromARGB(255, 248, 76, 76),
         onPressed: () {
           OrganizaDadosParaSalvar();
+          estaEditando = false;
+          _seuCampoDeTextoFocus.unfocus();
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
