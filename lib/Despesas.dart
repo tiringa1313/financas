@@ -223,6 +223,27 @@ class _DespesasState extends State<Despesas> {
     });
   }
 
+  void _carregarDadosCategoriaDiferente(Map<String, dynamic> despesa) {
+    setState(() {
+      // Configurar os valores nos campos de edição
+      _controllerValorDespesa.text = despesa['valor'].toString();
+      categoriaFrontEnd = categoriasMapa.entries
+          .singleWhere((entry) => entry.value == despesa['tipo'])
+          .key;
+      categoriaSelecionada = despesa['tipo'];
+      _controllerAutocomplete.clear();
+      _dataSelecionada = (despesa['data'] as Timestamp).toDate();
+      _controllerData.text =
+          DateFormat('dd/MM/yyyy', 'pt_BR').format(_dataSelecionada!);
+
+      // Configurar a variável despesaEmEdicao
+      despesaEmEdicao = despesa;
+
+      // Indicar que está editando
+      estaEditando = true;
+    });
+  }
+
   void _editarDespesa(Map<String, dynamic> despesa) async {
     try {
       await FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -288,6 +309,9 @@ class _DespesasState extends State<Despesas> {
             _controllerAutocomplete.clear();
 
             await _carregarDespesas();
+
+            // Exibir mensagem de dados salvos
+            _mostrarMensagem('Despesa editada com sucesso!');
           } catch (e) {
             // Tratar exceção, se necessário
           }
@@ -370,6 +394,8 @@ class _DespesasState extends State<Despesas> {
             _controllerAutocomplete.clear();
 
             await _carregarDespesas();
+// Exibir mensagem de dados salvos
+            _mostrarMensagem('Despesa editada com sucesso!');
           } catch (e) {
             // Tratar exceção, se necessário
           }
@@ -484,7 +510,7 @@ class _DespesasState extends State<Despesas> {
         // Atualizar a lista de despesas após salvar uma nova
         await _carregarDespesas();
         // Exibir mensagem de dados salvos
-        _mostrarMensagem('Despesa editada com sucesso!');
+        _mostrarMensagem('Despesa salva com sucesso!');
       } catch (e) {
         print('Erro ao salvar os dados no Firebase: $e');
       }
@@ -621,6 +647,10 @@ class _DespesasState extends State<Despesas> {
                   setState(() {
                     categoriaFrontEnd = newValue;
                     categoriaSelecionada = categoriasMapa[newValue];
+
+                    if (categoriaSelecionada != _categoriaEdicao) {
+                      _controllerAutocomplete.clear();
+                    }
 
                     // print('Categoria Firebase $categoriaSelecionada');
                     //print('Categoria Front End $categoriaFrontEnd');
