@@ -26,9 +26,18 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Esconder o teclado quando a tela é iniciada
+    SystemChannels.textInput.invokeMethod('TextInput.hide');
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
           "Minhas Finanças",
           style: TextStyle(

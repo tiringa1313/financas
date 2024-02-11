@@ -4,6 +4,13 @@ import 'package:financas/Receitas.dart';
 import 'package:financas/model/AuthManager.dart';
 import 'package:financas/Despesas.dart';
 import 'package:flutter/material.dart';
+import 'package:financas/Categorias.dart';
+import 'package:financas/Login.dart';
+import 'package:financas/Receitas.dart';
+import 'package:financas/model/AuthManager.dart';
+import 'package:financas/Despesas.dart';
+import 'package:flutter/material.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 
 class AbaResumoGeral extends StatefulWidget {
   const AbaResumoGeral({Key? key}) : super(key: key);
@@ -20,14 +27,29 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
     return Scaffold(
       body: Column(
         children: [
-          // Conteúdo principal aqui
+          // Margem superior para a barra de progresso
+          SizedBox(height: 16.0),
+
+          // LinearPercentIndicator acima dos Cards
+          LinearPercentIndicator(
+            width: MediaQuery.of(context).size.width, // Largura total da tela
+            lineHeight: 24.0,
+            percent: 0.5,
+            center: Text(
+              "50.0%",
+              style: TextStyle(fontSize: 12.0),
+            ),
+            linearStrokeCap: LinearStrokeCap.roundAll,
+            backgroundColor: Colors.grey,
+            progressColor: Colors.blue,
+          ),
 
           // Adicione um espaço flexível para empurrar o Card para a parte inferior
           Expanded(child: Container()),
 
-          // Lista horizontal de Cards na parte inferior
           Container(
-            height: 150, // Ajuste a altura dos Cards conforme necessário
+            height:
+                150, // Ajuste a altura dos Cards inferiores conforme necessário
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
@@ -119,7 +141,7 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
                 // Espaçamento entre os Cards
                 SizedBox(width: 6),
 
-                // card categorias
+                // Card Categorias
                 GestureDetector(
                   onTap: () {
                     // Remove o foco para ocultar o teclado
@@ -163,7 +185,7 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
                 // Espaçamento entre os Cards
                 SizedBox(width: 6),
 
-                // Card METAS / PROJETOS
+                // Card Metas/Projetos
                 GestureDetector(
                   onTap: () {
                     // Remove o foco para ocultar o teclado

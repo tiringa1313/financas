@@ -810,32 +810,36 @@ class _DespesasState extends State<Despesas> {
                       subtitle: Text(
                         "R\$ ${despesa['valor']} - ${DateFormat('dd/MM/yyyy', 'pt_BR').format((despesa['data'] as Timestamp).toDate())}",
                       ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: Icon(
-                              Icons.edit,
-                              color: Color.fromARGB(255, 30, 167, 18),
+                      trailing: Padding(
+                        padding: const EdgeInsets.only(
+                            right: 1.0), // Ajuste o valor conforme necessário
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                Icons.edit,
+                                color: Color.fromARGB(255, 30, 167, 18),
+                              ),
+                              onPressed: () {
+                                _categoriaEdicao = despesa['tipo'];
+                                estaEditando = true;
+                                despesaEmEdicao = despesa;
+                                _carregarDadosParaEdicao(despesa);
+                              },
                             ),
-                            onPressed: () {
-                              _categoriaEdicao = despesa['tipo'];
-                              estaEditando = true;
-                              despesaEmEdicao = despesa;
-                              _carregarDadosParaEdicao(despesa);
-                            },
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              Icons.delete,
-                              color: Colors.red,
+                            IconButton(
+                              icon: Icon(
+                                Icons.delete,
+                                color: Colors.red,
+                              ),
+                              onPressed: () {
+                                excluirDespesa(despesa);
+                                excluirDespesaRastreamento(despesa);
+                              },
                             ),
-                            onPressed: () {
-                              excluirDespesa(despesa);
-                              excluirDespesaRastreamento(despesa);
-                            },
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       onTap: () {
                         // Pode manter a lógica aqui, se necessário
@@ -844,7 +848,6 @@ class _DespesasState extends State<Despesas> {
                   },
                 ),
               ),
-
 //***********/ FIM DO LISTVIEW ********************************************** */
             ],
           ),
