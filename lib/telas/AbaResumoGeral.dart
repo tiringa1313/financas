@@ -21,29 +21,46 @@ class AbaResumoGeral extends StatefulWidget {
 
 class _AbaResumoGeralState extends State<AbaResumoGeral> {
   final FocusNode _focusNode = FocusNode();
+  final double percentSpent =
+      60.0; // Substitua isso pela porcentagem real de gastos
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Margem superior para a barra de progresso
           SizedBox(height: 16.0),
 
-          // LinearPercentIndicator acima dos Cards
-          LinearPercentIndicator(
-            width: MediaQuery.of(context).size.width, // Largura total da tela
-            lineHeight: 24.0,
-            percent: 0.5,
-            center: Text(
-              "50.0%",
-              style: TextStyle(fontSize: 12.0),
+          // Adicione um texto acima da barra de progresso
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Text(
+              'Gastos Essenciais:',
+              style: TextStyle(
+                fontSize: 18,
+                color: Color(0xFF496634),
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            linearStrokeCap: LinearStrokeCap.roundAll,
-            backgroundColor: Colors.grey,
-            progressColor: Colors.blue,
           ),
 
+          Container(
+            margin: EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 6.0), // Ajuste a margem vertical conforme necessário
+            child: LinearProgressIndicator(
+              value: percentSpent / 100,
+              backgroundColor: Colors.grey[300],
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC6E3AF)),
+              minHeight: 22,
+              borderRadius: BorderRadius.circular(24),
+            ),
+          ),
+
+          // Espaçamento entre a barra de progresso e os Cards
+          SizedBox(height: 12),
           // Adicione um espaço flexível para empurrar o Card para a parte inferior
           Expanded(child: Container()),
 
