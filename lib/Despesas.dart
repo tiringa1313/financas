@@ -474,6 +474,10 @@ class _DespesasState extends State<Despesas> {
         await firebaseService.atualizarSaldo(userId, saldoFormatado,
             firebaseService.getUsuariosCollectionReference());
 
+        // chama o metodo para atualizar o total das despesas
+        // para posteriormente fazer os resumos
+        atualizaResumoDespesas(userId, categoriaSelecionada!, _valorDespesa);
+
         // Converter o objeto DespesasObj para um mapa
         Map<String, dynamic> despesaMap = despesa.toMap();
 
@@ -514,6 +518,39 @@ class _DespesasState extends State<Despesas> {
       } catch (e) {
         print('Erro ao salvar os dados no Firebase: $e');
       }
+    }
+  }
+
+  void atualizaResumoDespesas(
+    String idUsuario,
+    String categoriaDespesa,
+    double valorDespesa,
+  ) async {
+    double totalDespesa;
+    String totalAposSomar;
+
+    try {
+      FirebaseService firebaseService = FirebaseService('usuarios');
+
+      //buscar o total da despesa
+      String _totalDespesa = await firebaseService.buscarTotalDespesas(
+          idUsuario, categoriaDespesa);
+
+      // conversao da string totalDespesa para double
+      totalDespesa = double.parse(_totalDespesa);
+
+      totalDespesa = valorDespesa + totalDespesa;
+
+      totalAposSomar = totalDespesa.toString();
+
+      // chama o metodo responsavel pelo update no firebase
+
+      await firebaseService.atualizarTotalDespesas(idUsuario, totalAposSomar,
+          categoriaDespesa, firebaseService.getUsuariosCollectionReference());
+
+      print('total despesa retornado $_totalDespesa');
+    } catch (e) {
+      print('Erro ao buscar o total das despesas: $e');
     }
   }
 

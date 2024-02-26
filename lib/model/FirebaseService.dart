@@ -90,6 +90,67 @@ class FirebaseService implements FirebaseServiceBase {
     }
   }
 
+  Future<String> buscarTotalDespesas(
+      String idUsuario, String categoriaDespesa) async {
+    Map<String, String> categoriasMapa = {
+      'despesasEssenciais': 'totalEssenciais',
+      'despesasLivres': 'totalLivres',
+      'despesasEducacao': 'totalEducacao',
+    };
+
+    try {
+      // Acesse o documento do usuário com base no ID fornecido
+      DocumentSnapshot usuarioDoc = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(idUsuario)
+          .get();
+
+      if (!usuarioDoc.exists) {
+        // O documento do usuário não existe
+        printInfo('O documento de categoria despesa não existe', {});
+        return '0.0'; // ou qualquer valor padrão que você queira retornar como string
+      }
+
+      // Obtenha o valor de despesas do documento do usuário como uma string
+      Map<String, dynamic> despesaData =
+          usuarioDoc.data() as Map<String, dynamic>;
+
+      // Use a categoria fornecida para obter a chave correta do mapa
+      String chaveDespesa =
+          categoriasMapa[categoriaDespesa] ?? 'totalDesconhecido';
+
+      // Obtenha o valor da chave correspondente
+      String totalDespesas = despesaData[chaveDespesa]?.toString() ?? '0.00';
+
+      return totalDespesas;
+    } catch (e) {
+      // Lidar com erros, se necessário
+      printInfo('Erro ao buscar a categoria de despesas do usuário: $e', {});
+      throw e; // ou retorne um valor padrão, dependendo da lógica do seu aplicativo
+    }
+  }
+
+  Future<void> atualizarTotalDespesas(String idUsuario, String totalDespesas,
+      String categoriaDespesa, CollectionReference collectionReference) async {
+    DocumentSnapshot documentSnapshot =
+        await collectionReference.doc(idUsuario).get();
+
+    switch (categoriaDespesa) {
+      case "despesasEssenciais":
+        try {
+          if (documentSnapshot.exists) {
+            // O documento existe, então podemos atualizar o saldo
+
+            await collectionReference.doc(idUsuario).update({
+              'totalEssenciais': totalDespesas,
+            });
+          } else {
+            printInfo('Documento do usuário não encontrado', {});
+          }
+        } catch (e) {}
+    }
+  }
+
 // Este método retorna uma lista de Mapas contendo as últimas 4 despesas ordenadas por data de forma descendente.
   Future<List<Map<String, dynamic>>> obterUltimasDespesas() async {
     QuerySnapshot querySnapshot = await _collectionReference

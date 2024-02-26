@@ -3,6 +3,7 @@ import 'package:financas/Login.dart';
 import 'package:financas/Receitas.dart';
 import 'package:financas/model/AuthManager.dart';
 import 'package:financas/Despesas.dart';
+import 'package:financas/model/FirebaseService.dart';
 import 'package:flutter/material.dart';
 import 'package:financas/Categorias.dart';
 import 'package:financas/Login.dart';
@@ -20,9 +21,34 @@ class AbaResumoGeral extends StatefulWidget {
 }
 
 class _AbaResumoGeralState extends State<AbaResumoGeral> {
+  double? _saldoGeral;
   final FocusNode _focusNode = FocusNode();
-  final double percentSpent =
-      60.0; // Substitua isso pela porcentagem real de gastos
+  final double percentSpent = 35.00;
+
+  // Metodo para buscar saldo geral
+  void buscarSaldoGeral() async {
+    String? userId = AuthManager.userId;
+
+    if (userId == null) {
+      print('Usuário não autenticado!');
+      return;
+    }
+
+    try {
+      // Criar uma instância do seu serviço Firebase
+      FirebaseService firebaseService =
+          FirebaseService('usuarios'); // Use 'usuarios' como coleção
+
+      // Buscar o saldo geral do usuário
+      String saldoGeralString =
+          await firebaseService.buscarSaldoGeralUsuario(userId);
+      // Converte o saldoGeral String para Double
+      _saldoGeral = double.parse(saldoGeralString);
+      print('Saldo Geral Retornado Pelo Firebase $_saldoGeral');
+    } catch (e) {
+      print('Erro ao buscar o saldo geral do usuário: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +66,7 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
               'Gastos Essenciais:',
               style: TextStyle(
                 fontSize: 18,
-                color: Color(0xFF496634),
+                color: Color(0xFF425932),
                 fontWeight: FontWeight.bold,
               ),
             ),
