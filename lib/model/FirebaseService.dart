@@ -135,19 +135,35 @@ class FirebaseService implements FirebaseServiceBase {
     DocumentSnapshot documentSnapshot =
         await collectionReference.doc(idUsuario).get();
 
-    switch (categoriaDespesa) {
-      case "despesasEssenciais":
-        try {
-          if (documentSnapshot.exists) {
-            // O documento existe, então podemos atualizar o saldo
+    Map<String, String> categoriasMapa = {
+      'despesasEssenciais': 'totalEssenciais',
+      'despesasLivres': 'totalLivres',
+      'despesasEducacao': 'totalEducacao',
+    };
 
-            await collectionReference.doc(idUsuario).update({
-              'totalEssenciais': totalDespesas,
-            });
-          } else {
-            printInfo('Documento do usuário não encontrado', {});
-          }
-        } catch (e) {}
+    try {
+      // Acesse o documento do usuário com base no ID fornecido
+      DocumentSnapshot usuarioDoc = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(idUsuario)
+          .get();
+
+      if (!usuarioDoc.exists) {
+        // O documento do usuário não existe
+        printInfo('O documento de categoria despesa não existe', {});
+      }
+
+      // Use a categoria fornecida para obter a chave correta do mapa
+      String chaveDespesa =
+          categoriasMapa[categoriaDespesa] ?? 'totalDesconhecido';
+
+      await collectionReference.doc(idUsuario).update({
+        chaveDespesa: totalDespesas.toString(),
+      });
+    } catch (e) {
+      // Lidar com erros, se necessário
+      printInfo('Erro ao buscar a categoria de despesas do usuário: $e', {});
+      throw e; // ou retorne um valor padrão, dependendo da lógica do seu aplicativo
     }
   }
 
