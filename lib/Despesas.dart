@@ -153,7 +153,7 @@ class _DespesasState extends State<Despesas> {
 
     try {
       // Criar uma instância do seu serviço Firebase
-      FirebaseService firebaseService = FirebaseService(_categoriaEdicao!);
+      FirebaseService firebaseService = FirebaseService(despesa['tipo']);
 
       // Buscar o saldo geral atual do usuário no Firebase
       String saldoGeralString =
@@ -167,6 +167,11 @@ class _DespesasState extends State<Despesas> {
 
       // Calcular o novo saldo geral
       novoSaldoGeral = saldoGeral + valorDespesa;
+
+      // subtrair o valor deletado no resumo das despesas
+
+      await _atualizaResumoDespesasSubtracao(
+          idUsuario, despesa['tipo'], valorDespesa);
 
       // Atualizar o saldo geral no Firestore (convertendo para String)
       await firebaseService.atualizarSaldo(
@@ -296,6 +301,17 @@ class _DespesasState extends State<Despesas> {
             await firebaseService.atualizarSaldo(userId, saldoFormatado,
                 firebaseService.getUsuariosCollectionReference());
 
+            // atualiza os resumos gerais no firebase
+            // primeiro subtrai o valor antigo e depois soma o novo
+
+            // subtrai o valor antigo
+            await _atualizaResumoDespesasSubtracao(
+                userId, categoriaAnterior!, despesaAnterior);
+
+            //soma o novo valor que o usuario editou
+            atualizaResumoDespesas(
+                userId, categoriaAnterior, valorDespesaDouble);
+
             editarDadosRastreamento(idDespesaRastreamento!, rastreamentoEdicao);
             estaEditando = false;
             setState(() {
@@ -378,6 +394,16 @@ class _DespesasState extends State<Despesas> {
               'mes': DateFormat.MMMM('pt_BR').format(_dataSelecionada!),
               'idDespesa': idDespesa,
             };
+
+            // subtrai o valor antigo da despesa que foi editada
+
+            await _atualizaResumoDespesasSubtracao(
+                userId, categoriaAnterior, despesaAnterior);
+
+            // soma o novo valor na nova despesa
+
+            atualizaResumoDespesas(
+                userId, categoriaSelecionada!, valorDespesaEdicao);
 
             // Chamar o método para salvar as informações de rastreamento de despesas
             await firebaseServiceNova
@@ -522,6 +548,7 @@ class _DespesasState extends State<Despesas> {
   }
 
   void atualizaResumoDespesas(
+    // soma resumos
     String idUsuario,
     String categoriaDespesa,
     double valorDespesa,
@@ -532,25 +559,59 @@ class _DespesasState extends State<Despesas> {
     try {
       FirebaseService firebaseService = FirebaseService('usuarios');
 
-      //buscar o total da despesa
+      // Buscar o total da despesa
       String _totalDespesa = await firebaseService.buscarTotalDespesas(
           idUsuario, categoriaDespesa);
 
-      // conversao da string totalDespesa para double
+      // Conversão da string totalDespesa para double
       totalDespesa = double.parse(_totalDespesa);
 
       totalDespesa = valorDespesa + totalDespesa;
 
-      totalAposSomar = totalDespesa.toString();
+      // Utilize o método toStringAsFixed para formatar o número com 2 casas decimais
+      totalAposSomar = totalDespesa.toStringAsFixed(2);
 
-      // chama o metodo responsavel pelo update no firebase
-
+      // Chama o método responsável pelo update no Firebase
       await firebaseService.atualizarTotalDespesas(idUsuario, totalAposSomar,
           categoriaDespesa, firebaseService.getUsuariosCollectionReference());
 
-      print('total despesa retornado $_totalDespesa');
+      print('Total despesa retornado $_totalDespesa');
     } catch (e) {
       print('Erro ao buscar o total das despesas: $e');
+    }
+  }
+
+  Future<void> _atualizaResumoDespesasSubtracao(
+      // subtrai resumos
+      String idUsuario,
+      String categoriaDespesa,
+      double valorDespesa) async {
+    try {
+      FirebaseService firebaseService = FirebaseService('usuarios');
+
+      // Buscar o total da despesa
+      String _totalDespesa = await firebaseService.buscarTotalDespesas(
+          idUsuario, categoriaDespesa);
+
+      // Conversão da string _totalDespesa para double
+      double totalDespesa = double.parse(_totalDespesa);
+
+      // Subtrair o valor da despesa do total
+      totalDespesa -= valorDespesa;
+
+      // Converter o totalDespesa de volta para string
+      String totalAposSubtracao = totalDespesa.toStringAsFixed(2);
+
+      // Chamar o método responsável pelo update no Firebase
+      await firebaseService.atualizarTotalDespesas(
+          idUsuario,
+          totalAposSubtracao,
+          categoriaDespesa,
+          firebaseService.getUsuariosCollectionReference());
+
+      print('Total despesa após subtração: $totalAposSubtracao');
+    } catch (e) {
+      print('Erro ao atualizar o total das despesas após subtração: $e');
     }
   }
 
