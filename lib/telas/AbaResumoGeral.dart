@@ -23,8 +23,12 @@ class AbaResumoGeral extends StatefulWidget {
 class _AbaResumoGeralState extends State<AbaResumoGeral> {
   double? _saldoGeral;
   double? _totalEssenciais;
+  double? _totalEducacao;
+  double? _totalLivres;
   final FocusNode _focusNode = FocusNode();
-  double percentSpent = 0.0; // Inicialize com 0.0
+  double percentSpentpercentSpentEssenciais = 0.0; // Inicialize com 0.0
+  double percentSpentpercentSpentEducacao = 0.0; // Inicialize com 0.0
+  double percentSpentpercentSpentLivre = 0.0; // Inicialize com 0.0
 
   @override
   void initState() {
@@ -55,11 +59,16 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
           FirebaseService('usuarios'); // Use 'usuarios' como coleção
 
       // Buscar o saldo geral do usuário
+      // obs: utilizar um MAP para buscar os totais somente em uma chamada para otimizar o tempo
       String saldoGeralString =
           await firebaseService.buscarSaldoGeralUsuario(userId);
 
       String totalEssenciais = await firebaseService.buscarTotalDespesas(
           userId, "despesasEssenciais");
+      String totalEducacao =
+          await firebaseService.buscarTotalDespesas(userId, "despesasEducacao");
+      String totalLivres =
+          await firebaseService.buscarTotalDespesas(userId, "despesasLivres");
 
       // Converte o saldoGeral String para Double
       _saldoGeral = double.parse(saldoGeralString);
@@ -67,16 +76,32 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
       //converte o total despesas para Double
 
       _totalEssenciais = double.parse(totalEssenciais);
+      _totalEducacao = double.parse(totalEducacao);
+      _totalLivres = double.parse(totalLivres);
 
       print('Saldo Geral Retornado Pelo Firebase $_saldoGeral');
 
       // Atualizar o percentual de despesas
       // Exemplo: Suponha que você tenha uma variável com o valor total das despesas
-      //double valorDespesas = 1000.0; // Substitua pelo valor total das despesas
+
       // Calcula o percentual de despesas em relação ao saldo geral
-      percentSpent = (_totalEssenciais! / _saldoGeral!) * 100;
+
+      percentSpentpercentSpentEssenciais =
+          (_totalEssenciais! / _saldoGeral!) * 100;
+      percentSpentpercentSpentEducacao = (_totalEducacao! / _saldoGeral!) * 100;
+      percentSpentpercentSpentLivre = (_totalLivres! / _saldoGeral!) * 100;
+
       // Garante que o percentual não seja superior a 100%
-      percentSpent = percentSpent > 100 ? 100 : percentSpent;
+      percentSpentpercentSpentEssenciais =
+          percentSpentpercentSpentEssenciais > 100
+              ? 100
+              : percentSpentpercentSpentEssenciais;
+      percentSpentpercentSpentEducacao = percentSpentpercentSpentEducacao > 100
+          ? 100
+          : percentSpentpercentSpentEducacao;
+      percentSpentpercentSpentLivre = percentSpentpercentSpentLivre > 100
+          ? 100
+          : percentSpentpercentSpentLivre;
 
       setState(() {}); // Notifique o Flutter para reconstruir a interface
     } catch (e) {
@@ -111,7 +136,65 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
                 horizontal: 20.0,
                 vertical: 6.0), // Ajuste a margem vertical conforme necessário
             child: LinearProgressIndicator(
-              value: percentSpent / 100,
+              value: percentSpentpercentSpentEssenciais / 100,
+              backgroundColor: Colors.grey[300],
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC6E3AF)),
+              minHeight: 22,
+              borderRadius: BorderRadius.circular(24),
+            ),
+          ),
+
+          // Margem superior para a barra de progresso
+          SizedBox(height: 16.0),
+
+          // Adicione um texto acima da barra de progresso
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Text(
+              'Gastos Educação:',
+              style: TextStyle(
+                fontSize: 18,
+                color: Color(0xFF425932),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+
+          Container(
+            margin: EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 6.0), // Ajuste a margem vertical conforme necessário
+            child: LinearProgressIndicator(
+              value: percentSpentpercentSpentEducacao / 100,
+              backgroundColor: Colors.grey[300],
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC6E3AF)),
+              minHeight: 22,
+              borderRadius: BorderRadius.circular(24),
+            ),
+          ),
+
+          // Margem superior para a barra de progresso
+          SizedBox(height: 16.0),
+
+          // Adicione um texto acima da barra de progresso
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Text(
+              'Gastos Livres:',
+              style: TextStyle(
+                fontSize: 18,
+                color: Color(0xFF425932),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+
+          Container(
+            margin: EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 6.0), // Ajuste a margem vertical conforme necessário
+            child: LinearProgressIndicator(
+              value: percentSpentpercentSpentEducacao / 100,
               backgroundColor: Colors.grey[300],
               valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC6E3AF)),
               minHeight: 22,
