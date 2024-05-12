@@ -26,9 +26,9 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
   double? _totalEducacao;
   double? _totalLivres;
   final FocusNode _focusNode = FocusNode();
-  double percentSpentpercentSpentEssenciais = 0.0; // Inicialize com 0.0
-  double percentSpentpercentSpentEducacao = 0.0; // Inicialize com 0.0
-  double percentSpentpercentSpentLivre = 0.0; // Inicialize com 0.0
+  double percentSpentEssenciais = 0.0; // Inicialize com 0.0
+  double percentSpentEducacao = 0.0; // Inicialize com 0.0
+  double percentSpentLivre = 0.0; // Inicialize com 0.0
 
   @override
   void initState() {
@@ -54,56 +54,39 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
     }
 
     try {
-      // Criar uma instância do seu serviço Firebase
-      FirebaseService firebaseService =
-          FirebaseService('usuarios'); // Use 'usuarios' como coleção
+      FirebaseService firebaseService = FirebaseService('usuarios');
 
-      // Buscar o saldo geral do usuário
-      // obs: utilizar um MAP para buscar os totais somente em uma chamada para otimizar o tempo
+      // Busca o saldo geral do usuário
       String saldoGeralString =
           await firebaseService.buscarSaldoGeralUsuario(userId);
-
-      String totalEssenciais = await firebaseService.buscarTotalDespesas(
-          userId, "despesasEssenciais");
-      String totalEducacao =
-          await firebaseService.buscarTotalDespesas(userId, "despesasEducacao");
-      String totalLivres =
-          await firebaseService.buscarTotalDespesas(userId, "despesasLivres");
-
-      // Converte o saldoGeral String para Double
       _saldoGeral = double.parse(saldoGeralString);
 
-      //converte o total despesas para Double
+      // Busca os totais de despesas
+      String totalEssenciaisString = await firebaseService.buscarTotalDespesas(
+          userId, "despesasEssenciais");
+      double totalEssenciais = double.parse(totalEssenciaisString);
 
-      _totalEssenciais = double.parse(totalEssenciais);
-      _totalEducacao = double.parse(totalEducacao);
-      _totalLivres = double.parse(totalLivres);
+      String totalEducacaoString =
+          await firebaseService.buscarTotalDespesas(userId, "despesasEducacao");
+      double totalEducacao = double.parse(totalEducacaoString);
 
-      print('Saldo Geral Retornado Pelo Firebase $_saldoGeral');
+      String totalLivresString =
+          await firebaseService.buscarTotalDespesas(userId, "despesasLivres");
+      double totalLivres = double.parse(totalLivresString);
 
-      // Atualizar o percentual de despesas
-      // Exemplo: Suponha que você tenha uma variável com o valor total das despesas
-
-      // Calcula o percentual de despesas em relação ao saldo geral
-
-      percentSpentpercentSpentEssenciais =
-          (_totalEssenciais! / _saldoGeral!) * 100;
-      percentSpentpercentSpentEducacao = (_totalEducacao! / _saldoGeral!) * 100;
-      percentSpentpercentSpentLivre = (_totalLivres! / _saldoGeral!) * 100;
+      // Calcula a porcentagem de despesas
+      percentSpentEssenciais = (totalEssenciais / _saldoGeral!) * 100;
+      percentSpentEducacao = (totalEducacao / _saldoGeral!) * 100;
+      percentSpentLivre = (totalLivres / _saldoGeral!) * 100;
 
       // Garante que o percentual não seja superior a 100%
-      percentSpentpercentSpentEssenciais =
-          percentSpentpercentSpentEssenciais > 100
-              ? 100
-              : percentSpentpercentSpentEssenciais;
-      percentSpentpercentSpentEducacao = percentSpentpercentSpentEducacao > 100
-          ? 100
-          : percentSpentpercentSpentEducacao;
-      percentSpentpercentSpentLivre = percentSpentpercentSpentLivre > 100
-          ? 100
-          : percentSpentpercentSpentLivre;
+      percentSpentEssenciais =
+          percentSpentEssenciais > 100 ? 100 : percentSpentEssenciais;
+      percentSpentEducacao =
+          percentSpentEducacao > 100 ? 100 : percentSpentEducacao;
+      percentSpentLivre = percentSpentLivre > 100 ? 100 : percentSpentLivre;
 
-      setState(() {}); // Notifique o Flutter para reconstruir a interface
+      setState(() {}); // Notifica o Flutter para reconstruir a interface
     } catch (e) {
       print('Erro ao buscar o saldo geral do usuário: $e');
     }
@@ -116,7 +99,7 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Margem superior para a barra de progresso
-          SizedBox(height: 16.0),
+          SizedBox(height: 24.0),
 
           // Adicione um texto acima da barra de progresso
           Padding(
@@ -136,7 +119,7 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
                 horizontal: 20.0,
                 vertical: 6.0), // Ajuste a margem vertical conforme necessário
             child: LinearProgressIndicator(
-              value: percentSpentpercentSpentEssenciais / 100,
+              value: percentSpentEssenciais / 100,
               backgroundColor: Colors.grey[300],
               valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC6E3AF)),
               minHeight: 22,
@@ -165,7 +148,7 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
                 horizontal: 20.0,
                 vertical: 6.0), // Ajuste a margem vertical conforme necessário
             child: LinearProgressIndicator(
-              value: percentSpentpercentSpentEducacao / 100,
+              value: percentSpentEducacao / 100,
               backgroundColor: Colors.grey[300],
               valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC6E3AF)),
               minHeight: 22,
@@ -194,7 +177,7 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
                 horizontal: 20.0,
                 vertical: 6.0), // Ajuste a margem vertical conforme necessário
             child: LinearProgressIndicator(
-              value: percentSpentpercentSpentEducacao / 100,
+              value: percentSpentEducacao / 100,
               backgroundColor: Colors.grey[300],
               valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC6E3AF)),
               minHeight: 22,
