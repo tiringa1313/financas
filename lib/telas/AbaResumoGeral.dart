@@ -22,10 +22,25 @@ class AbaResumoGeral extends StatefulWidget {
 
 class _AbaResumoGeralState extends State<AbaResumoGeral> {
   double? _saldoGeral;
+  double? _totalEssenciais;
   final FocusNode _focusNode = FocusNode();
-  final double percentSpent = 35.00;
+  double percentSpent = 0.0; // Inicialize com 0.0
 
-  // Metodo para buscar saldo geral
+  @override
+  void initState() {
+    super.initState();
+    // Chama o método para buscar o saldo geral quando o estado do widget é inicializado
+    buscarSaldoGeral();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Chama o método para buscar o saldo geral sempre que as dependências do widget mudarem
+    buscarSaldoGeral();
+  }
+
+  // Método para buscar saldo geral
   void buscarSaldoGeral() async {
     String? userId = AuthManager.userId;
 
@@ -42,9 +57,28 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
       // Buscar o saldo geral do usuário
       String saldoGeralString =
           await firebaseService.buscarSaldoGeralUsuario(userId);
+
+      String totalEssenciais = await firebaseService.buscarTotalDespesas(
+          userId, "despesasEssenciais");
+
       // Converte o saldoGeral String para Double
       _saldoGeral = double.parse(saldoGeralString);
+
+      //converte o total despesas para Double
+
+      _totalEssenciais = double.parse(totalEssenciais);
+
       print('Saldo Geral Retornado Pelo Firebase $_saldoGeral');
+
+      // Atualizar o percentual de despesas
+      // Exemplo: Suponha que você tenha uma variável com o valor total das despesas
+      //double valorDespesas = 1000.0; // Substitua pelo valor total das despesas
+      // Calcula o percentual de despesas em relação ao saldo geral
+      percentSpent = (_totalEssenciais! / _saldoGeral!) * 100;
+      // Garante que o percentual não seja superior a 100%
+      percentSpent = percentSpent > 100 ? 100 : percentSpent;
+
+      setState(() {}); // Notifique o Flutter para reconstruir a interface
     } catch (e) {
       print('Erro ao buscar o saldo geral do usuário: $e');
     }
