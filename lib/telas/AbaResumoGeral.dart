@@ -74,12 +74,18 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
           await firebaseService.buscarTotalDespesas(userId, "despesasLivres");
       double totalLivres = double.parse(totalLivresString);
 
-      // Calcula a porcentagem de despesas
-      percentSpentEssenciais = (totalEssenciais / _saldoGeral!) * 100;
-      percentSpentEducacao = (totalEducacao / _saldoGeral!) * 100;
-      percentSpentLivre = (totalLivres / _saldoGeral!) * 100;
+      // Calcula o orcamento
 
-      // Garante que o percentual não seja superior a 100%
+      _totalEssenciais = 0.55 * _saldoGeral!;
+      _totalEducacao = 0.05 * _saldoGeral!;
+      _totalLivres = 0.10 * _saldoGeral!;
+
+      // Calcula a porcentagem de despesas
+      percentSpentEssenciais = (totalEssenciais / _totalEssenciais!) * 100;
+      percentSpentEducacao = (totalEducacao / _totalEducacao!) * 100;
+      percentSpentLivre = (totalLivres / _totalLivres!) * 100;
+
+      // Garante que o percentual não seja superior a 100%1
       percentSpentEssenciais =
           percentSpentEssenciais > 100 ? 100 : percentSpentEssenciais;
       percentSpentEducacao =
