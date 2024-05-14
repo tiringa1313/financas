@@ -74,25 +74,24 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
           await firebaseService.buscarTotalDespesas(userId, "despesasLivres");
       double totalLivres = double.parse(totalLivresString);
 
-      // Calcula o orcamento
+      //Todos os cálculos e atualizações de estado são realizados dentro do setState para garantir que a interface reflita as mudanças.
 
-      _totalEssenciais = 0.55 * _saldoGeral!;
-      _totalEducacao = 0.05 * _saldoGeral!;
-      _totalLivres = 0.10 * _saldoGeral!;
+      setState(() {
+        // Calcula o orçamento
+        _totalEssenciais = 0.55 * _saldoGeral!;
+        _totalEducacao = 0.05 * _saldoGeral!;
+        _totalLivres = 0.10 * _saldoGeral!;
 
-      // Calcula a porcentagem de despesas
-      percentSpentEssenciais = (totalEssenciais / _totalEssenciais!) * 100;
-      percentSpentEducacao = (totalEducacao / _totalEducacao!) * 100;
-      percentSpentLivre = (totalLivres / _totalLivres!) * 100;
+        // Calcula a porcentagem de despesas
+        percentSpentEssenciais = (totalEssenciais / _totalEssenciais!) * 100;
+        percentSpentEducacao = (totalEducacao / _totalEducacao!) * 100;
+        percentSpentLivre = (totalLivres / _totalLivres!) * 100;
 
-      // Garante que o percentual não seja superior a 100%1
-      percentSpentEssenciais =
-          percentSpentEssenciais > 100 ? 100 : percentSpentEssenciais;
-      percentSpentEducacao =
-          percentSpentEducacao > 100 ? 100 : percentSpentEducacao;
-      percentSpentLivre = percentSpentLivre > 100 ? 100 : percentSpentLivre;
-
-      setState(() {}); // Notifica o Flutter para reconstruir a interface
+        // Garante que o percentual não seja superior a 100%
+        percentSpentEssenciais = percentSpentEssenciais.clamp(0, 100);
+        percentSpentEducacao = percentSpentEducacao.clamp(0, 100);
+        percentSpentLivre = percentSpentLivre.clamp(0, 100);
+      });
     } catch (e) {
       print('Erro ao buscar o saldo geral do usuário: $e');
     }

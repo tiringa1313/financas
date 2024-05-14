@@ -1,8 +1,12 @@
-import 'package:financas/Login.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
+import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'login.dart'; // Importe seu arquivo de login
+import 'firebase_options.dart'; // Importe suas opções de Firebase
+
+// Defina o RouteObserver
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +27,7 @@ class Financas extends StatelessWidget {
     initializeDateFormatting('pt_BR');
     return MaterialApp(
       home: const Login(),
+      navigatorObservers: [routeObserver], // Adicione o RouteObserver aqui
       theme: ThemeData(
         primaryColor: const Color(0xFFB8D9A0), // Cor primária (verde)
         colorScheme: const ColorScheme.light(
@@ -45,6 +50,7 @@ class Financas extends StatelessWidget {
     );
   }
 }
+
 // chave de acesso api de financas
 // FOSHDAEXRB0SLCQ7
 
