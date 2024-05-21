@@ -13,14 +13,18 @@ import 'package:financas/Despesas.dart';
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 
+import 'package:flutter/material.dart';
+
 class AbaResumoGeral extends StatefulWidget {
-  const AbaResumoGeral({Key? key}) : super(key: key);
+  final VoidCallback onUpdate; // Definição do callback onUpdate
+
+  const AbaResumoGeral({Key? key, required this.onUpdate}) : super(key: key);
 
   @override
   State<AbaResumoGeral> createState() => _AbaResumoGeralState();
 }
 
-class _AbaResumoGeralState extends State<AbaResumoGeral> {
+class _AbaResumoGeralState extends State<AbaResumoGeral> with RouteAware {
   double? _saldoGeral;
   double? _totalEssenciais;
   double? _totalEducacao;
@@ -40,7 +44,21 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Chama o método para buscar o saldo geral sempre que as dependências do widget mudarem
+    // Registra o observador de rota
+    RouteObserver<PageRoute>()
+        .subscribe(this, ModalRoute.of(context)! as PageRoute<dynamic>);
+  }
+
+  @override
+  void dispose() {
+    // Cancela o registro do observador de rota
+    RouteObserver<PageRoute>().unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Chama o método para buscar o saldo geral quando voltar para esta tela
     buscarSaldoGeral();
   }
 
@@ -74,7 +92,7 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
           await firebaseService.buscarTotalDespesas(userId, "despesasLivres");
       double totalLivres = double.parse(totalLivresString);
 
-      //Todos os cálculos e atualizações de estado são realizados dentro do setState para garantir que a interface reflita as mudanças.
+      // Todos os cálculos e atualizações de estado são realizados dentro do setState para garantir que a interface reflita as mudanças.
 
       setState(() {
         // Calcula o orçamento
@@ -91,6 +109,9 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
         percentSpentEssenciais = percentSpentEssenciais.clamp(0, 100);
         percentSpentEducacao = percentSpentEducacao.clamp(0, 100);
         percentSpentLivre = percentSpentLivre.clamp(0, 100);
+
+        // Chama o callback para atualizar a aba
+        widget.onUpdate();
       });
     } catch (e) {
       print('Erro ao buscar o saldo geral do usuário: $e');
@@ -182,7 +203,7 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
                 horizontal: 20.0,
                 vertical: 6.0), // Ajuste a margem vertical conforme necessário
             child: LinearProgressIndicator(
-              value: percentSpentEducacao / 100,
+              value: percentSpentLivre / 100,
               backgroundColor: Colors.grey[300],
               valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC6E3AF)),
               minHeight: 22,
@@ -203,13 +224,15 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
               children: [
                 // Primeiro Card
                 GestureDetector(
-                  onTap: () {
+                  onTap: () async {
                     // Remove o foco para ocultar o teclado
                     _focusNode.unfocus();
-                    Navigator.push(
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => Receitas()),
                     );
+                    // Após voltar da tela de receitas, atualize os dados
+                    buscarSaldoGeral();
                   },
                   child: Card(
                     child: Container(
@@ -242,9 +265,6 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
                   ),
                 ),
 
-                // Espaçamento entre os Cards
-                SizedBox(width: 6),
-
                 // Segundo Card
                 GestureDetector(
                   onTap: () {
@@ -252,7 +272,10 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> {
                     _focusNode.unfocus();
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => Despesas()),
+                      MaterialPageRoute(
+                          builder: (context) => Despesas(
+                                onUpdate: () {},
+                              )),
                     );
                   },
                   child: Card(

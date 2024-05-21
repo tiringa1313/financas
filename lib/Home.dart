@@ -13,23 +13,21 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  String _emailUsuario = "";
+  // Método para atualizar a aba de resumo geral
+  void atualizarAbaResumo() {
+    setState(() {}); // Força a atualização da tela
+  }
 
   @override
   void initState() {
     super.initState();
-
-    // Esconder o teclado quando a tela é iniciada
     SystemChannels.textInput.invokeMethod('TextInput.hide');
-
     _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    // Esconder o teclado quando a tela é iniciada
     SystemChannels.textInput.invokeMethod('TextInput.hide');
   }
 
@@ -54,19 +52,15 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
           unselectedLabelColor: Colors.white,
           controller: _tabController,
           indicatorColor: Color(0xFF425932),
-          tabs: <Widget>[
-            Tab(
-              text: "Resumo Geral",
-            ),
-            Tab(
-              text: "Orçamento",
-            )
-          ],
+          tabs: <Widget>[Tab(text: "Resumo Geral"), Tab(text: "Orçamento")],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
-        children: <Widget>[AbaResumoGeral(), AbaOrcamento()],
+        children: <Widget>[
+          AbaResumoGeral(onUpdate: atualizarAbaResumo),
+          AbaOrcamento(),
+        ],
       ),
     );
   }

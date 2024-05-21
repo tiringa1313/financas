@@ -9,7 +9,9 @@ import 'package:get_it/get_it.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 
 class Despesas extends StatefulWidget {
-  const Despesas({super.key});
+  final VoidCallback onUpdate; // Callback para atualizar a aba
+
+  const Despesas({Key? key, required this.onUpdate}) : super(key: key);
 
   @override
   State<Despesas> createState() => _DespesasState();
@@ -541,6 +543,8 @@ class _DespesasState extends State<Despesas> {
         await _carregarDespesas();
         // Exibir mensagem de dados salvos
         _mostrarMensagem('Despesa salva com sucesso!');
+
+        onUpdate();
       } catch (e) {
         print('Erro ao salvar os dados no Firebase: $e');
       }
@@ -970,4 +974,6 @@ class _DespesasState extends State<Despesas> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
+
+  void onUpdate() {}
 }
