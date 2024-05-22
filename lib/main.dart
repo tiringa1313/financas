@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'login.dart'; // Importe seu arquivo de login1
 import 'firebase_options.dart'; // Importe suas opções de Firebase
@@ -55,4 +54,4 @@ class Financas extends StatelessWidget {
 // FOSHDAEXRB0SLCQ7
 
 // cor de alerta 
-// cor de alerta
+// cor de alerta"

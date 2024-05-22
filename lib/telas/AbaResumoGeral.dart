@@ -17,8 +17,10 @@ import 'package:flutter/material.dart';
 
 class AbaResumoGeral extends StatefulWidget {
   final VoidCallback onUpdate; // Definição do callback onUpdate
-
-  const AbaResumoGeral({Key? key, required this.onUpdate}) : super(key: key);
+  final Function() onDespesaAdicionada;
+  const AbaResumoGeral(
+      {Key? key, required this.onUpdate, required this.onDespesaAdicionada})
+      : super(key: key);
 
   @override
   State<AbaResumoGeral> createState() => _AbaResumoGeralState();
