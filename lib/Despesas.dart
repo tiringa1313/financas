@@ -9,9 +9,10 @@ import 'package:get_it/get_it.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 
 class Despesas extends StatefulWidget {
-  final VoidCallback onUpdate; // Callback para atualizar a aba
+  final Function onUpdate; // Callback para atualizar a aba
 
-  const Despesas({Key? key, required this.onUpdate}) : super(key: key);
+  // Remova 'const' do construtor
+  Despesas({Key? key, required this.onUpdate}) : super(key: key);
 
   @override
   State<Despesas> createState() => _DespesasState();
@@ -37,6 +38,13 @@ class _DespesasState extends State<Despesas> {
   final FocusNode _seuCampoDeTextoFocus = FocusNode();
 
   List<Map<String, dynamic>> listUltimasDespesas = [];
+
+  void atualizarResumoGeral() {
+    setState(() {});
+
+    // Chame o callback para informar ao pai que a atualização foi feita
+    widget.onUpdate();
+  }
 
 //Todas as variaveis aqui      *************************************************
 
