@@ -16,11 +16,14 @@ import 'package:percent_indicator/percent_indicator.dart';
 import 'package:flutter/material.dart';
 
 class AbaResumoGeral extends StatefulWidget {
-  final VoidCallback onUpdate; // Definição do callback onUpdate
-  final Function() onDespesaAdicionada;
-  const AbaResumoGeral(
-      {Key? key, required this.onUpdate, required this.onDespesaAdicionada})
-      : super(key: key);
+  final VoidCallback onUpdate;
+  final VoidCallback onDespesaAdicionada;
+
+  const AbaResumoGeral({
+    Key? key,
+    required this.onUpdate,
+    required this.onDespesaAdicionada,
+  }) : super(key: key);
 
   @override
   State<AbaResumoGeral> createState() => _AbaResumoGeralState();
@@ -32,39 +35,34 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> with RouteAware {
   double? _totalEducacao;
   double? _totalLivres;
   final FocusNode _focusNode = FocusNode();
-  double percentSpentEssenciais = 0.0; // Inicialize com 0.0
-  double percentSpentEducacao = 0.0; // Inicialize com 0.0
-  double percentSpentLivre = 0.0; // Inicialize com 0.0
+  double percentSpentEssenciais = 0.0;
+  double percentSpentEducacao = 0.0;
+  double percentSpentLivre = 0.0;
 
   @override
   void initState() {
     super.initState();
-    // Chama o método para buscar o saldo geral quando o estado do widget é inicializado
     buscarSaldoGeral();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Registra o observador de rota
     RouteObserver<PageRoute>()
         .subscribe(this, ModalRoute.of(context)! as PageRoute<dynamic>);
   }
 
   @override
   void dispose() {
-    // Cancela o registro do observador de rota
     RouteObserver<PageRoute>().unsubscribe(this);
     super.dispose();
   }
 
   @override
   void didPopNext() {
-    // Chama o método para buscar o saldo geral quando voltar para esta tela
     buscarSaldoGeral();
   }
 
-  // Método para buscar saldo geral
   void buscarSaldoGeral() async {
     String? userId = AuthManager.userId;
 
@@ -76,12 +74,10 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> with RouteAware {
     try {
       FirebaseService firebaseService = FirebaseService('usuarios');
 
-      // Busca o saldo geral do usuário
       String saldoGeralString =
           await firebaseService.buscarSaldoGeralUsuario(userId);
       _saldoGeral = double.parse(saldoGeralString);
 
-      // Busca os totais de despesas
       String totalEssenciaisString = await firebaseService.buscarTotalDespesas(
           userId, "despesasEssenciais");
       double totalEssenciais = double.parse(totalEssenciaisString);
@@ -94,30 +90,29 @@ class _AbaResumoGeralState extends State<AbaResumoGeral> with RouteAware {
           await firebaseService.buscarTotalDespesas(userId, "despesasLivres");
       double totalLivres = double.parse(totalLivresString);
 
-      // Todos os cálculos e atualizações de estado são realizados dentro do setState para garantir que a interface reflita as mudanças.
-
       setState(() {
-        // Calcula o orçamento
         _totalEssenciais = 0.55 * _saldoGeral!;
         _totalEducacao = 0.05 * _saldoGeral!;
         _totalLivres = 0.10 * _saldoGeral!;
 
-        // Calcula a porcentagem de despesas
         percentSpentEssenciais = (totalEssenciais / _totalEssenciais!) * 100;
         percentSpentEducacao = (totalEducacao / _totalEducacao!) * 100;
         percentSpentLivre = (totalLivres / _totalLivres!) * 100;
 
-        // Garante que o percentual não seja superior a 100%
         percentSpentEssenciais = percentSpentEssenciais.clamp(0, 100);
         percentSpentEducacao = percentSpentEducacao.clamp(0, 100);
         percentSpentLivre = percentSpentLivre.clamp(0, 100);
 
-        // Chama o callback para atualizar a aba
         widget.onUpdate();
       });
     } catch (e) {
       print('Erro ao buscar o saldo geral do usuário: $e');
     }
+  }
+
+  void adicionarDespesa() async {
+    // Lógica para adicionar despesa
+    widget.onDespesaAdicionada(); // Chama o callback após adicionar despesa
   }
 
   @override

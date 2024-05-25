@@ -189,6 +189,7 @@ class _DespesasState extends State<Despesas> {
 
       // Exibir mensagem de exclusão bem-sucedida
       _mostrarMensagem('Despesa excluída com sucesso!');
+      widget.onUpdate();
     } catch (e) {
       print('Erro ao excluir a despesa do Firebase: $e');
     }
@@ -211,22 +212,15 @@ class _DespesasState extends State<Despesas> {
 
   void _carregarDadosParaEdicao(Map<String, dynamic> despesa) {
     setState(() {
-      // Configurar os valores nos campos de edição
       _controllerValorDespesa.text = despesa['valor'].toString();
-      categoriaFrontEnd = categoriasMapa.entries
-          .singleWhere((entry) => entry.value == despesa['tipo'])
-          .key;
-      categoriaSelecionada = despesa['tipo'];
-      _controllerAutocomplete.text = despesa['subcategorias'] ?? '';
-      _dataSelecionada = (despesa['data'] as Timestamp).toDate();
-      _controllerData.text =
-          DateFormat('dd/MM/yyyy', 'pt_BR').format(_dataSelecionada!);
-
-      // Configurar a variável despesaEmEdicao
-      despesaEmEdicao = despesa;
-
-      // Indicar que está editando
+      _controllerData.text = despesa['data'];
+      _controllerAutocomplete.text = despesa['descricao'];
+      _categoriaEdicao = despesa['categoria'];
+      _tipoDespesa = despesa['tipo'];
+      _dataSelecionada =
+          DateFormat('dd/MM/yyyy', 'pt_BR').parse(despesa['data']);
       estaEditando = true;
+      despesaEmEdicao = despesa; // Armazenar a despesa em edição
     });
   }
 
@@ -330,6 +324,8 @@ class _DespesasState extends State<Despesas> {
 
             // Exibir mensagem de dados salvos
             _mostrarMensagem('Despesa editada com sucesso!');
+
+            widget.onUpdate();
           } catch (e) {
             // Tratar exceção, se necessário
           }
@@ -421,9 +417,8 @@ class _DespesasState extends State<Despesas> {
             });
             _controllerAutocomplete.clear();
 
-            await _carregarDespesas();
-// Exibir mensagem de dados salvos
             _mostrarMensagem('Despesa editada com sucesso!');
+            widget.onUpdate();
           } catch (e) {
             // Tratar exceção, se necessário
           }
@@ -444,6 +439,8 @@ class _DespesasState extends State<Despesas> {
 
       // Atualizar a lista de despesas após salvar uma nova
       await _carregarDespesas();
+
+      widget.onUpdate(); // Chama o callback após editar a despesa
     } catch (e) {
       print('Erro ao editar dados de rastreamento: $e');
       // Adicione aqui qualquer outra lógica de tratamento de erro desejada.
@@ -543,6 +540,7 @@ class _DespesasState extends State<Despesas> {
         await _carregarDespesas();
         // Exibir mensagem de dados salvos
         _mostrarMensagem('Despesa salva com sucesso!');
+        widget.onUpdate(); // Chama o callback após salvar a despesa
 
         onUpdate();
       } catch (e) {

@@ -8,18 +8,10 @@ class Home extends StatefulWidget {
 
   @override
   State<Home> createState() => _HomeState();
-
-  void onDespesaAdicionada() {}
 }
 
 class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-
-  // Método para notificar a aba de resumo geral quando uma despesa for adicionada
-  void notificarAbaResumo() {
-    // Chama a função de callback onDespesaAdicionada da aba AbaResumoGeral
-    widget.onDespesaAdicionada();
-  }
 
   @override
   void initState() {
@@ -63,9 +55,17 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         children: <Widget>[
           AbaResumoGeral(
             onUpdate: () {
-              setState(() {}); // Força a atualização da aba de resumo geral
+              if (_tabController.index == 0) {
+                // Verifica se a aba ativa é "Resumo Geral"
+                setState(() {});
+              }
             },
-            onDespesaAdicionada: notificarAbaResumo,
+            onDespesaAdicionada: () {
+              if (_tabController.index == 0) {
+                // Verifica se a aba ativa é "Resumo Geral"
+                setState(() {});
+              }
+            },
           ),
           AbaOrcamento(),
         ],
